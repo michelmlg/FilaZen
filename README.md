@@ -66,9 +66,12 @@ O Docker Compose irá criar e iniciar os containers necessários para o seu ambi
 Depois de rodar o Docker Compose, você pode acessar a aplicação e os serviços locais através das seguintes URLs:
 
 Aplicação web: http://localhost
+
 Banco de dados MySQL: localhost:3306
+
 Interface web do phpMyAdmin: http://localhost:9090
-Use as credenciais configuradas no arquivo .env para acessar o phpMyAdmin:
+
+Use as credenciais configuradas no arquivo .env para acessar o phpMyAdmin.
 
 #### 7. Pronto!
 Agora o ambiente está configurado e pronto para ser utilizado. Se precisar de ajuda adicional, consulte a documentação ou abra uma issue no repositório.
