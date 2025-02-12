@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: web-apache
+    volumes:
+      - ./:/var/www/html/
+    env_file:
+      - .env
+    ports:
+      - "80:80"
+    platform: linux/amd64
+
+  db:
+    image: mysql:5.7
+    container_name: db-mysql
+    env_file:
+      - .env
+    volumes:
+      - db_data:/var/lib/mysql
+    platform: linux/amd64
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: myadm
+    environment:
+      PMA_HOST: ${PMA_HOST}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "9090:80"
+    platform: linux/amd64
+    
+
+volumes:
+  db_data:
