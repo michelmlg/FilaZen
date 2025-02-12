@@ -12,8 +12,8 @@ Este repositório contém um projeto que utiliza **Docker** para configurar um a
 Primeiro, clone este repositório para sua máquina local:
 
 ```bash
-git clone https://github.com/seu-usuario/nome-do-repositorio.git
-cd nome-do-repositorio
+git clone https://github.com/michelmlg/FilaZen.git
+cd FilaZen
 ```
 
 #### 2. Copiando o Arquivo .env.example
