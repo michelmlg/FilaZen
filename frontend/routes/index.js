@@ -6,6 +6,7 @@ const options = {
         vue: Vue
     },
     getFile(url) {
+        console.log("routes - carregando: " + url)
         return fetch(url).then(res => res.ok ? res.text() : Promise.reject(`Erro ao carregar ${url}`));
     },
     addStyle(textContent) {
@@ -24,11 +25,15 @@ const options = {
 const routes = [
     {
         path: "/",
-        component: () => loadModule("/frontend/views/Home.vue", options),
+        component: () => loadModule("/frontend/views/Queue.vue", options),
     },
     {
-        path: "/about",
-        component: () => loadModule("/frontend/views/About.vue", options),
+        path: "/orders",
+        component: () => loadModule("/frontend/views/Orders.vue", options),
+    },
+    {
+        path: "/rules",
+        component: () => loadModule("/frontend/views/Rules.vue", options),
     }
 ];
 

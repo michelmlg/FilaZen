@@ -8,6 +8,7 @@ const options = {
         vue: Vue
     },
     getFile(url) {
+        console.log("Carregando arquivo:", url);
         return fetch(url).then(res => res.ok ? res.text() : Promise.reject(`Erro ao carregar ${url}`));
     },
     addStyle(textContent) {
