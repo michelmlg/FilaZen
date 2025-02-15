@@ -5,8 +5,9 @@ export default {
     return {
       isMenuOpen: false,
       links: [
-        { text: "Home", url: "/" },
-        { text: "Sobre", url: "#/about" },
+        { text: "Fila", url: "/" },
+        { text: "Pedidos", url: "/pedidos" },
+        { text: "Regras", url: "/regras" },
       ]
     };
   },
