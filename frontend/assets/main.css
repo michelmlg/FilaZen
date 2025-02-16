@@ -1,7 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap');
 :root{
     --text: #08545e;
     --background: #d3dede;
     --primary: #37be81;
+    --primaryL:#5cffb5;
     --secondary: #1bb2d0;
+    --secondaryL: #54e2ff;
     --accent: #7270db;
 }
+/* Importando a fonte Montserrat */
+
+/* Reset e Fonte Global */
+* {
+  box-sizing: border-box;
+  font-family: 'Montserrat', sans-serif;
+}
+
+body {
+  background: #bfedf7;
+  color: var(--text);
+  margin: 0;
+  padding: 0;
+}
+
+.fila-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #bfedf7;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilização dos usuários na fila */
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.5s ease-in-out;
+  opacity: 0.8;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: var(--secondary);
+}
+
+.destaque {
+  font-weight: bold;
+  opacity: 1;
+  background: var(--primary);
+  color: white;
+  padding: 15px;
+}
+
+.usuario img {
+  width: 70px;
+  height: 70px;
+  transition: all 0.5s ease-in-out;
+  border: 3px solid var(--secondary);
+}
+
+.destaque img {
+  width: 150px;
+  height: 150px;
+  border: 4px solid var(--accent);
+}
+
+.usuario span {
+  font-size: 1.2rem;
+}
+
+.destaque span {
+  font-size: 2rem;
+}
+
+/* Botão estilizado */
+.botao-abrir {
+  background: var(--secondary);
+  color: white;
+  border: none;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 12px 24px;
+  border-radius: 8px;
+  transition: background 0.3s;
+}
+
+.botao-abrir:hover {
+  background: var(--accent);
+}
+
+/* Tabela de informações de venda */
+.info-venda {
+  margin-top: 20px;
+  background: rgba(27, 178, 208, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.table {
+  width: 100%;
+}
+
+.table td {
+  font-size: 1rem;
+  padding: 8px 12px;
+}
+
+/* Animação da fila */
+.fila-move {
+  transition: transform 0.9s ease-out, opacity 0.9s ease-out;
+}
+
+.fila-enter-from, .fila-leave-to {
+  opacity: 0;
+  transform: translateY(-50px);
+}
+
+.fila-leave-active {
+  position: absolute;
+}
+

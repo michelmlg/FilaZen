@@ -7,12 +7,11 @@ export default {
 </script>
 
 <template>
+  <main class="main">
     <Navbar></Navbar>
-    <div class="container mt-4">
       <router-view></router-view>
-    </div>
+  </main>
 </template>
 
 <style>
-
 </style>

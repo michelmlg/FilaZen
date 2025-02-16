@@ -39,20 +39,20 @@ export default {
 
 <template>
   <section class="fila-container ms-2 me-2 d-flex justify-content-between">
-    <div class="w-70">
+    <div class="row justify-content-center">
       <h2 class="mb-2">A vez é de</h2>
       <transition-group name="fila" tag="div">
         <div v-for="(usuario, index) in usuarios" :key="usuario.nome" 
-             class="usuario" 
+             class="usuario col-12" 
              :class="[{ 'destaque': index === 0 }, 'mb-4']">
           <img :src="usuario.imagem" class="rounded-circle" alt="Usuário">
           <span>{{ usuario.nome }}</span>
         </div>
       </transition-group>
     </div>
-    <div class="w-30">
+    <div class="w-30 pedido">
       <div class="d-flex flex-column align-items-center">
-          <i class="fa-solid fa-lock"></i>
+          <i class="fa-solid fa-lock botao-abrir-pedido"></i>
           <button class="btn btn-lg btn-outline-secondary botao-abrir btn-big-padding mt-2">Abrir pedido</button>
       </div>
 
@@ -79,28 +79,18 @@ export default {
 
 </template>
 
-<style scoped>
-/* Estilização básica */
+<style>
+
 .fila-container {
   padding: 20px;
 }
 
 
-.usuario {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: all 0.5s ease-in-out;
-  opacity: 0.8;
-}
-
-/* Destaque do primeiro usuário */
 .destaque {
   font-weight: bold;
   opacity: 1;
 }
 
-/* Tamanho padrão dos ícones */
 .usuario img {
   width: 70px;
   height: 70px;
@@ -140,6 +130,11 @@ export default {
   padding-bottom: 2rem;
   padding-left: 4rem;
   padding-right: 4rem;
+}
+.pedido {
+  position: absolute;
+  right: 20px;
+  width: 300px;
 }
 
 </style>
