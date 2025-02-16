@@ -20,7 +20,7 @@ export default {
 </script>
 
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light">
+  <nav class="navbar navbar-expand-lg p-4 border border-light">
     <div class="container-fluid">
       <a class="navbar-brand" href="#">FilaZen</a>
       <button 
@@ -43,6 +43,16 @@ export default {
 </template>
 
 <style scoped>
+.border-light{
+  border-color: var(--textVue);
+}
+.navbar{
+  background-color: var(--backgroundVue);
+}
+a{
+  color: var(--textVue)
+}
+
 .navbar-toggler {
   border: none;
 }
