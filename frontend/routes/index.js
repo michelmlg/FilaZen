@@ -25,6 +25,10 @@ const options = {
 const routes = [
     {
         path: "/",
+        component: () => loadModule("/frontend/views/LandingPage.vue", options),
+    },
+    {
+        path: "/queue",
         component: () => loadModule("/frontend/views/Queue.vue", options),
     },
     {

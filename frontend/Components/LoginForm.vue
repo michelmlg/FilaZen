@@ -91,7 +91,7 @@
                     timerProgressBar: true,
                     showConfirmButton: false,
                 });
-                window.location.replace("#/");
+                window.location.replace("#/queue");
                 } else {
                 Swal.fire({
                     title: "Erro",
