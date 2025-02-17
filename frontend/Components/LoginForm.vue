@@ -12,7 +12,7 @@
             <div class="mb-3">
                 <label class="form-label">Selecione a forma de login:</label>
                 <select class="form-select" v-model="tipoLogin">
-                <option value="username">Username</option>
+                <option value="username">Usuário</option>
                 <option value="email">Email</option>
                 </select>
             </div>
@@ -54,49 +54,61 @@
       return {
         loginData: {
           username: "",
-          full_name: "",
+          email: "",
           password: "",
         },
         tipoLogin: "username",
       };
     },
     methods: {
-      async loginUser() {
-        try {
-          const response = await fetch("/backend/controllers/userController.php", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(this.loginData),
-          });
-  
-          const result = await response.json();
-  
-          if (result.status === 'success') {
-            Swal.fire({
-              title: "Bem-vindo!",
-              text: "Você foi autenticado com sucesso",
-              icon: "success"
-            });
-            window.location.replace('#/dashboard');
-          } else {
-            Swal.fire({
-              title: "Erro",
-              text: "Credenciais inválidas, tente novamente",
-              icon: "error"
-            });
-          }
-        } catch (e) {
-          console.error("Erro ao autenticar usuário:", e);
+        async loginUser() {
+            try {
+                // Define o método de login com base na seleção
+                const method = this.tipoLogin === "email" ? "email" : "username";
+
+                // Cria um novo objeto contendo os dados do login e o método
+                const loginPayload = {
+                ...this.loginData,
+                method: method,
+                };
+
+                const response = await fetch("/backend/controllers/authController.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(loginPayload),
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                Swal.fire({
+                    title: "Bem-vindo!",
+                    text: "Você foi autenticado com sucesso",
+                    icon: "success",
+                    timer: 1000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                });
+                window.location.replace("#/");
+                } else {
+                Swal.fire({
+                    title: "Erro",
+                    text: "Credenciais inválidas, tente novamente",
+                    icon: "error",
+                });
+                }
+            } catch (e) {
+                console.error("Erro ao autenticar usuário:", e);
+            }
+
+            // Limpa os campos após envio
+            this.loginData.username = "";
+            this.loginData.email = "";
+            this.loginData.password = "";
+            }
         }
-  
-        // Limpa os campos após envio
-        this.loginData.username = "";
-        this.loginData.full_name = "";
-        this.loginData.password = "";
-      },
-    },
   };
   </script>
   

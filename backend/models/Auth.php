@@ -4,6 +4,10 @@ include('User.php');
 session_start();
 
 class Auth {
+    public static function getSession(){
+        return $_SESSION;
+    }
+
     public static function loginWithUsername($pdo, $username, $password) {
         
         $user = User::findByUsername($pdo, $username);
@@ -12,7 +16,7 @@ class Auth {
             $_SESSION['user'] = [
                 'id' => $user['id'],
                 'username' => $user['username'],
-                'email' => $user['email']
+                'email' => $user['email'],
                 'full_name' => $user['full_name'],
                 'role' => $user['role'],
                 'img_path' => $user['img_path']
@@ -30,7 +34,7 @@ class Auth {
             $_SESSION['user'] = [
                 'id' => $user['id'],
                 'username' => $user['username'],
-                'email' => $user['email']
+                'email' => $user['email'],
                 'full_name' => $user['full_name'],
                 'role' => $user['role'],
                 'img_path' => $user['img_path']

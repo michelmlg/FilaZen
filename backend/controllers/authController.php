@@ -10,6 +10,10 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 $inputData = json_decode(file_get_contents("php://input"), true);
 
+if($method == 'GET'){
+    echo json_encode(Auth::getSession());
+}
+
 if ($method == 'POST' && $inputData['method'] == 'username') {
     try {
         $pdo = getConnection();
@@ -54,6 +58,16 @@ if ($method == 'POST' && $inputData['method'] == 'email') {
         $pdo = null; // Fecha a conexão
     }
     exit;
+}
+
+if($method == 'DELETE'){
+    try{
+        Auth::logout();
+    
+        echo json_encode(["status" => "success", "message" => "Usuário deslogado com sucesso."]);
+    }catch(Exception $e){
+        echo json_encode(["status" => "error", "message" => "Erro ao deslogar usuário: " . $e->getMessage()]);
+    }
 }
 
 
