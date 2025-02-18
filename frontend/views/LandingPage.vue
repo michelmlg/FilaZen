@@ -47,7 +47,7 @@
             <div class="col-md-4">
               <i class="fas fa-award fa-3x accentVue"></i>
               <h4 class="mt-3">Bonificações</h4>
-              <p>Motivação extra para os vendedores mais engajados.</p>
+              <p>Incentivando um ambiente justo para bonificações da equipe.</p>
             </div>
           </div>
         </div>

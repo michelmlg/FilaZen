@@ -106,6 +106,33 @@ class User {
         $stmt = $pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public static function getAllStatus($pdo){
+        $sql = "SELECT * FROM user_status ORDER BY id ASC";
+        $stmt = $pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function verifyStatus($pdo, $id){
+        $sql = "SELECT u.status as id, us.name as name FROM user u JOIN user_status us ON u.status = us.id WHERE u.id = :id";
+
+        $stmt = $pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function changeStatus($pdo, $id, $status_id){
+        $sql = "UPDATE user SET status = :id_status WHERE id = :id";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':id_status', $status_id);
+
+        if($stmt->execute()){
+            return true;
+        }else{
+            return false;
+        }
+    }
     
 }
 ?>

@@ -4,7 +4,7 @@
       <div class="card shadow-lg" style="max-width: 400px; width: 100%;">
         <div class="card-header text-center" style="background-color: var(--textVue); color: var(--secondaryVue)">
           <!-- Logo -->
-          <img src="path_to_logo.png" alt="Logo" class="mb-3" style="max-height: 80px;">
+          <img src="path_to_logo.png" alt="" class="mb-3" style="max-height: 80px;">
           <h3>Login</h3>
         </div>
         <div class="card-body">
