@@ -6,7 +6,7 @@
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <div class="collapse navbar-collapse" id="navbarNav">
+      <div class="collapse navbar-collapse" :class="{ 'show': isMenuOpen }" id="navbarNav">
         <div class="ms-auto">
           <a href="#/login" class="btn btn-outline-primaryVue rounded-pill me-2">
             Login
@@ -98,6 +98,11 @@
   <script>
   export default {
     name: "FilaZenLanding",
+    data(){
+        return{
+            isMenuOpen: false
+        }
+    },
     methods: {
       toggleMenu() {
             this.isMenuOpen = !this.isMenuOpen;
