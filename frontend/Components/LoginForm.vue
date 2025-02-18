@@ -82,31 +82,26 @@
 
                 const result = await response.json();
 
-                if (result.status === "success") {
-                Swal.fire({
-                    title: "Bem-vindo!",
-                    text: "Você foi autenticado com sucesso",
-                    icon: "success",
-                    timer: 1000,
-                    timerProgressBar: true,
-                    showConfirmButton: false,
-                });
-                window.location.replace("#/queue");
-                } else {
-                Swal.fire({
-                    title: "Erro",
-                    text: "Credenciais inválidas, tente novamente",
-                    icon: "error",
-                });
+                    if (result.status === "success") {
+                    Swal.fire({
+                        title: "Bem-vindo!",
+                        text: "Você foi autenticado com sucesso",
+                        icon: "success",
+                        timer: 1000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                    });
+                    window.location.replace("#/queue");
+                    } else {
+                    Swal.fire({
+                        title: "Erro",
+                        text: "Credenciais inválidas, tente novamente",
+                        icon: "error",
+                    });
+                    }
+                } catch (e) {
+                    console.error("Erro ao autenticar usuário:", e);
                 }
-            } catch (e) {
-                console.error("Erro ao autenticar usuário:", e);
-            }
-
-            // Limpa os campos após envio
-            this.loginData.username = "";
-            this.loginData.email = "";
-            this.loginData.password = "";
             }
         }
   };

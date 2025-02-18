@@ -13,7 +13,7 @@ class Auth {
         $user = User::findByUsername($pdo, $username);
 
         if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user'] = [
+            $_SESSION['user_session'] = [
                 'id' => $user['id'],
                 'username' => $user['username'],
                 'email' => $user['email'],
@@ -31,7 +31,7 @@ class Auth {
         $user = User::findByEmail($pdo, $email);
 
         if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user'] = [
+            $_SESSION['user_session'] = [
                 'id' => $user['id'],
                 'username' => $user['username'],
                 'email' => $user['email'],

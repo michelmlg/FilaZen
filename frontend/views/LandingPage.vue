@@ -98,7 +98,12 @@
   <script>
   export default {
     name: "FilaZenLanding",
-  };
+    methods: {
+      toggleMenu() {
+            this.isMenuOpen = !this.isMenuOpen;
+      }
+    }
+  }
   </script>
   
   <style scoped>

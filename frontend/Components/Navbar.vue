@@ -1,27 +1,22 @@
 <script>
-import { onMounted, ref } from "vue";
-
 export default {
   name: "Navbar",
   data() {
     return {
+      isAuthenticated: false,
+      userData: null,
+      userStatus: null,
       isMenuOpen: false,
+      statusOptions: [],
       links: [
         { text: "Minha Fila", url: "/" },
         { text: "Pedidos", url: "#/orders" },
         { text: "Regras", url: "#/rules" },
-      ]
+      ],
     };
   },
-  setup() {
-    const isAuthenticated = ref(false);
-    const userData = ref(null);
-    const userStatus = ref("Disponível");
-    const isMenuOpen = ref(false);
-
-    const statusOptions = ["Disponível", "Ausente", "Férias", "Ocupado", "Outros"];
-
-    async function checkAuthStatus() {
+  methods: {
+    async checkAuth() {
       try {
         const response = await fetch("/backend/controllers/authController.php", {
           method: "GET",
@@ -34,64 +29,99 @@ export default {
         if (!response.ok) throw new Error("Erro ao verificar autenticação");
 
         const data = await response.json();
-        if (data.user) {
-          isAuthenticated.value = true;
-          userData.value = data.user;
+        if (data.user_session) {
+          this.isAuthenticated = true;
+          this.userData = data.user_session;
         }
       } catch (error) {
         console.error("Erro na verificação de autenticação:", error);
       }
-    }
+    },
+    async getUserStatus() {
 
-    function toggleMenu() {
-      isMenuOpen.value = !isMenuOpen.value;
-    }
+      try {
+        const response = await fetch('/backend/controllers/statusController.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: "include",
+          body: JSON.stringify({ id: this.userData.id })
+        });
 
-    async function logout() {
-      isAuthenticated.value = false;
-      userData.value = null;
+        const data = await response.json();
 
-      const response = await fetch("/backend/controllers/authController.php", {
-      method: "DELETE",
-      headers: {
-          "Content-Type": "application/json",
+        if (data.status === 'success') {
+          this.userStatus = data.id_status;
+          console.log("User status: " + this.userStatus);
+        } else {
+          console.log(data.status);
+        }
+      } catch (error) {
+        console.error('Erro na requisição:', error);
       }
-      });
+    },
+    async getAllStatus(){
+      try {
+        const response = await fetch('/backend/controllers/statusController.php', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
 
-      const data = await response.json(); 
+        const data = await response.json();
 
-      if(data.status == 'success'){
-        console.log(response.status);
-        Swal.fire({
+        if (data.status === 'success') {
+          this.statusOptions = data;
+          console.log("Status Options: " + data);
+        }
+      } catch (error) {
+        console.error('Erro na requisição:', error);
+      }
+    },
+    toggleMenu() {
+      this.isMenuOpen = !this.isMenuOpen;
+    },
+    async logout() {
+      this.isAuthenticated = false;
+      this.userData = null;
+
+      try {
+        const response = await fetch("/backend/controllers/authController.php", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" }
+        });
+
+        const data = await response.json();
+
+        if (data.status == 'success') {
+          Swal.fire({
             title: "Deslogado",
             text: "Deslogado com sucesso!",
             icon: "success",
-        });
-      }else{
-        Swal.fire({
+          });
+        } else {
+          Swal.fire({
             title: "Ocorreu um erro",
             text: "Não foi possível deslogar!",
             icon: "error",
-        });
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao deslogar:", error);
       }
     }
-
-    onMounted(() => {
-      checkAuthStatus();
-    });
-
-    return {
-      isAuthenticated,
-      userData,
-      userStatus,
-      isMenuOpen,
-      statusOptions,
-      toggleMenu,
-      logout
-    };
+  },
+  async mounted() {
+    await this.checkAuth();
+    await this.getUserStatus();
+    await this.getAllStatus();
+    console.log(this.userData);
   }
 };
 </script>
+
 
 <template>
   <nav class="navbar navbar-expand-lg p-4 border border-light">
@@ -111,8 +141,8 @@ export default {
         <!-- Se autenticado, exibe status e dropdown -->
         <div class="d-flex align-items-center">
           <select v-model="userStatus" class="form-select me-3">
-            <option v-for="status in statusOptions" :key="status" :value="status">
-              {{ status }}
+            <option v-for="status in statusOptions" :key="status" :value="status.id">
+              {{ status.name }}
             </option>
           </select>
 

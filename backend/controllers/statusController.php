@@ -20,7 +20,7 @@ if($method == 'GET'){
             echo json_encode(["status" => "success", "status_list" => $status_list]);
         }
     }catch(PDOException $e){
-        echo json_encode(["status" => "error", "message" => "Ocorreu um erro" + $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Ocorreu um erro" . $e->getMessage()]);
     }finally{
         $pdo = null;
     }
@@ -37,7 +37,7 @@ if($method == 'POST'){
     
         echo json_encode(["status" => "success", "id_status" => $statusData['id'], "status_name" => $statusData['name']]);
     }catch(PDOException $e){
-        echo json_encode(["status" => "error", "message" => "Ocorreu um erro ao verificar status" + $e->getMessage()])
+        echo json_encode(["status" => "error", "message" => "Ocorreu um erro ao verificar status" . $e->getMessage()])
     }
 }
 
@@ -54,7 +54,7 @@ if ($method == 'UPDATE') {
             echo json_encode(["status" => "success", "user_id" => $user_id, "new_status" => $new_status_id, "is_status_changed" => $change_status]);
         }
     }catch(PDOException $e){
-        echo json_encode(["status" => "error", "message" => "Ocorreu um erro ao alterar status" + $e.getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Ocorreu um erro ao alterar status" . $e.getMessage()]);
     }finally{
         $pdo = null;
     }
