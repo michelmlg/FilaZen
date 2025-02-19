@@ -1,7 +1,7 @@
 <?php
 
 class Queue {
-    private array $queue = [];
+    private $queue = [];
 
     public function enqueue(array $userData): void {
         $this->queue[] = $userData; // Adiciona o usuário ao final da fila
@@ -29,6 +29,21 @@ class Queue {
 
     public function getQueue(): array {
         return $this->queue;
+    }
+
+    public function populateQueueFromDatabase($pdo) {
+        try {
+            $stmt = $pdo->prepare("SELECT u.id as id, u.full_name as full_name, u.img_path as img_path, us.updated_at as updated_at FROM user u JOIN user_status us ON u.id = us.user_id WHERE us.status_id = 3 ORDER BY us.updated_at ASC");
+            $stmt->execute();
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+            foreach ($users as $user) {
+                $this->enqueue($user);
+            }
+        } catch (PDOException $e) {
+            echo json_encode(["status" => "error", "message" => "Erro ao buscar usuários: " . $e->getMessage()]);
+            exit;
+        }
     }
 
 }

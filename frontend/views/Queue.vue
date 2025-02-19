@@ -1,40 +1,46 @@
 <script>
 import Navbar from '../Components/Navbar.vue';
+
 export default {
   name: "Home",
   components: { Navbar },
   data() {
     return {
-        usuarios: [
-          { nome: 'Jéssica Pereira', imagem: '../../public/assets/images/usuario_template.png' },
-          { nome: 'Clarissa Neuman', imagem: '../../public/assets/images/usuario_template.png' },
-          { nome: 'Roberto Goulart', imagem: '../../public/assets/images/usuario_template.png' },
-          { nome: 'Marcela Alberta', imagem: '../../public/assets/images/usuario_template.png' },
-          { nome: 'Lucas Andrade', imagem: '../../public/assets/images/usuario_template.png' },
-          { nome: 'Fernando Souza', imagem: '../../public/assets/images/usuario_template.png' },
-          { nome: 'Patrícia Mendes', imagem: '../../public/assets/images/usuario_template.png' },
-          { nome: 'Carlos Eduardo', imagem: '../../public/assets/images/usuario_template.png' },
-          { nome: 'Bianca Ramos', imagem: '../../public/assets/images/usuario_template.png' }
-        ],
-        infoVenda: {
-            clientes: 35,
-            compraram: 19,
-            conversao: 54
-        }
+      usuarios: [],  // Inicialmente vazia, será preenchida com os dados da fila
+      infoVenda: {
+        clientes: 35,
+        compraram: 19,
+        conversao: 54
+      }
     };
   },
   methods: {
-    iniciarFila() {
+    verificarFila() {
+      this.obterFila();
+      
       setInterval(() => {
-        if (this.usuarios.length > 1) {
-        const primeiro = this.usuarios.shift(); // Remove o primeiro
-        this.usuarios.push(primeiro); // Adiciona no final
+        this.obterFila();
+      }, 5000); // Altera a cada 3 segundos
+    },
+
+    async obterFila() {
+      try {
+        const response = await fetch('/backend/controllers/queueController.php');  // Substitua pela URL correta do seu endpoint
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          this.usuarios = data.queue; // Atualiza a lista de usuários com a fila retornada
+          //this.iniciarFila(); // Inicia a rotação da fila
+        } else {
+          console.error('Erro ao obter a fila: ', data.message);
         }
-      }, 3000); // Altera a cada 3 segundos
+      } catch (error) {
+        console.error('Erro ao fazer requisição:', error);
+      }
     }
   },
   mounted() {
-    this.iniciarFila(); // Inicia a rotação automática da fila
+    this.verificarFila(); // Chama o método para obter a fila assim que o componente for montado
   }
 };
 </script>
@@ -45,11 +51,11 @@ export default {
     <div class="w-70">
       <h2 class="mb-2">A vez é de</h2>
       <transition-group name="fila" tag="div">
-        <div v-for="(usuario, index) in usuarios" :key="usuario.nome" 
+        <div v-for="(usuario, index) in usuarios" :key="usuario.id" 
              class="usuario" 
              :class="[{ 'destaque': index === 0 }, 'mb-4']">
-          <img :src="usuario.imagem" class="rounded-circle" alt="Usuário">
-          <span>{{ usuario.nome }}</span>
+          <img :src="usuario.img_path || '../../public/assets/images/usuario_template.png'" class="rounded-circle" alt="Usuário">
+          <span>{{ usuario.full_name }}</span>
         </div>
       </transition-group>
     </div>
@@ -75,11 +81,8 @@ export default {
           </tr>
         </table>
       </div>
-
     </div>
-
   </section>
-
 </template>
 
 <style scoped>

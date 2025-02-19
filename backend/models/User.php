@@ -25,25 +25,46 @@ class User {
     }
 
     public function store($pdo) {
-        $sql = "INSERT INTO user (username, email, full_name, password, role, img_path, status, created_at, updated_at) 
-                VALUES (:username, :email, :full_name, :password, :role, :img_path, :status, :created_at, :updated_at)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':username', $this->username);
-        $stmt->bindParam(':email', $this->email);
-        $stmt->bindParam(':full_name', $this->full_name);
-        $stmt->bindParam(':password', $this->password);
-        $stmt->bindParam(':role', $this->role);
-        $stmt->bindParam(':img_path', $this->img_path);
-        $stmt->bindParam(':status', $this->status);
-        $stmt->bindParam(':created_at', $this->created_at);
-        $stmt->bindParam(':updated_at', $this->updated_at);
-
-        if($stmt->execute()){
-            return $pdo->lastInsertId();
-        }else{
+        try {
+            // Inicia a transação
+            $pdo->beginTransaction();
+    
+            // Insere o usuário
+            $userSql = "INSERT INTO user (username, email, full_name, password, role, img_path, created_at, updated_at) 
+                    VALUES (:username, :email, :full_name, :password, :role, :img_path, :created_at, :updated_at)";
+    
+            $stmt = $pdo->prepare($userSql);
+            $stmt->bindParam(':username', $this->username);
+            $stmt->bindParam(':email', $this->email);
+            $stmt->bindParam(':full_name', $this->full_name);
+            $stmt->bindParam(':password', $this->password);
+            $stmt->bindParam(':role', $this->role);
+            $stmt->bindParam(':img_path', $this->img_path);
+            $stmt->bindParam(':created_at', $this->created_at);
+            $stmt->bindParam(':updated_at', $this->updated_at);
+    
+            $stmt->execute();
+            $userId = $pdo->lastInsertId();  // Obtém o ID do usuário recém inserido
+    
+            // Agora insere o status do usuário
+            $statusSql = "INSERT INTO user_status (user_id, status_id) VALUES (:user_id, :status_id)";
+            $statusStmt = $pdo->prepare($statusSql);
+            $statusStmt->bindParam(':user_id', $userId);
+            $statusStmt->bindParam(':status_id', $this->status);
+            
+            $statusStmt->execute();
+    
+            // Confirma a transação
+            $pdo->commit();
+    
+            return $userId;
+        } catch (PDOException $e) {
+            // Se ocorrer um erro, faz o rollback da transação
+            $pdo->rollBack();
             return false;
         }
     }
+    
 
     public function update($pdo) {
         $sql = "UPDATE user SET 
@@ -108,24 +129,26 @@ class User {
     }
 
     public static function getAllStatus($pdo){
-        $sql = "SELECT * FROM user_status ORDER BY id ASC";
+        $sql = "SELECT * FROM status ORDER BY id ASC";
         $stmt = $pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public static function verifyStatus($pdo, $id){
-        $sql = "SELECT u.status as id, us.name as name FROM user u JOIN user_status us ON u.status = us.id WHERE u.id = :id";
+        $sql = "SELECT status_id FROM user_status WHERE user_id = :id";
 
-        $stmt = $pdo->query($sql);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $pdo->prepare($sql);  
+        $stmt->execute(['id' => $id]);  
+
+        return $stmt->fetch(PDO::FETCH_ASSOC); //
     }
 
     public static function changeStatus($pdo, $id, $status_id){
-        $sql = "UPDATE user SET status = :id_status WHERE id = :id";
+        $sql = "UPDATE user_status SET status_id = :status_id WHERE user_id = :id";
 
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':id', $id);
-        $stmt->bindParam(':id_status', $status_id);
+        $stmt->bindParam(':status_id', $status_id);
 
         if($stmt->execute()){
             return true;

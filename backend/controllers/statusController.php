@@ -8,54 +8,72 @@ header("Content-Type: application/json");
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-$inputData = json_decode(file_get_contents("php://input"), true);
+// Suporte para `X-HTTP-Method-Override` e `$_POST['_method']`
+if ($method == 'POST' && isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {
+    $method = $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'];
+} elseif ($method == 'POST' && isset($_POST['_method'])) {
+    $method = $_POST['_method'];
+}
 
-if($method == 'GET'){
-    try{
+$inputData = json_decode(file_get_contents("php://input"), true) ?? $_POST;
+
+if ($method == 'GET') {
+    try {
         $pdo = getConnection();
 
         $status_list = User::getAllStatus($pdo);
 
-        if($status){
-            echo json_encode(["status" => "success", "status_list" => $status_list]);
-        }
-    }catch(PDOException $e){
-        echo json_encode(["status" => "error", "message" => "Ocorreu um erro" . $e->getMessage()]);
-    }finally{
+        echo json_encode(["status" => "success", "status_list" => $status_list]);
+    } catch (PDOException $e) {
+        echo json_encode(["status" => "error", "message" => "Ocorreu um erro: " . $e->getMessage()]);
+    } finally {
         $pdo = null;
     }
     exit;
 }
 
-if($method == 'POST'){
-    try{
+if ($method == 'POST') {
+    try {
         $pdo = getConnection();
-    
+
+        if (!isset($inputData['id'])) {
+            throw new Exception("ID do usuário não enviado.");
+        }
+
         $user_id = $inputData['id'];
-    
         $statusData = User::verifyStatus($pdo, $user_id);
-    
-        echo json_encode(["status" => "success", "id_status" => $statusData['id'], "status_name" => $statusData['name']]);
-    }catch(PDOException $e){
-        echo json_encode(["status" => "error", "message" => "Ocorreu um erro ao verificar status" . $e->getMessage()])
+
+        echo json_encode(["status" => "success", "id_status" => $statusData['status_id'], "status_name" => $statusData['status_name']]);
+    } catch (Exception | PDOException $e) {
+        echo json_encode(["status" => "error", "message" => "Erro: " . $e->getMessage()]);
+    } finally {
+        $pdo = null;
     }
+    exit;
 }
 
-if ($method == 'UPDATE') {
-    try{
-        $user_id = $inputData['id'];
-        $new_status_id = $inputData['status_id'];
-    
+if ($method == 'PUT') {
+    try {
         $pdo = getConnection();
-    
-        $change_status = User::changeStatus($pdo, $user_id, $new_status_id);
-    
-        if($change_status){
-            echo json_encode(["status" => "success", "user_id" => $user_id, "new_status" => $new_status_id, "is_status_changed" => $change_status]);
+
+        if (!isset($inputData['id']) || !isset($inputData['new_status'])) {
+            throw new Exception("Parâmetros incompletos.");
         }
-    }catch(PDOException $e){
-        echo json_encode(["status" => "error", "message" => "Ocorreu um erro ao alterar status" . $e.getMessage()]);
-    }finally{
+
+        $user_id = $inputData['id'];
+        $new_status = $inputData['new_status'];
+
+        $change_status = User::changeStatus($pdo, $user_id, $new_status);
+
+        echo json_encode([
+            "status" => "success",
+            "user_id" => $user_id,
+            "new_status" => $new_status,
+            "is_status_changed" => $change_status
+        ]);
+    } catch (Exception | PDOException $e) {
+        echo json_encode(["status" => "error", "message" => "Erro: " . $e->getMessage()]);
+    } finally {
         $pdo = null;
     }
     exit;

@@ -5,9 +5,9 @@ export default {
     return {
       isAuthenticated: false,
       userData: null,
-      userStatus: null,
       isMenuOpen: false,
       statusOptions: [],
+      userStatus: null,
       links: [
         { text: "Minha Fila", url: "/" },
         { text: "Pedidos", url: "#/orders" },
@@ -73,11 +73,38 @@ export default {
         const data = await response.json();
 
         if (data.status === 'success') {
-          this.statusOptions = data;
+          this.statusOptions = data.status_list;
           console.log("Status Options: " + data);
         }
       } catch (error) {
         console.error('Erro na requisição:', error);
+      }
+    },
+    async updateUserStatus() {
+      if (!this.userData) return;
+
+      try {
+        const response = await fetch('/backend/controllers/statusController.php', {
+          method: 'PUT', 
+          headers: { 'Content-Type': 'application/json' },
+          credentials: "include",
+          body: JSON.stringify({
+            id: this.userData.id,
+            new_status: this.userStatus
+          })
+        });
+
+        const data = await response.json();
+
+        console.log("updateUserStatus: " + data);
+
+        if (data.status === 'success') {
+          console.log("Status atualizado com sucesso!");
+        } else {
+          console.error("Erro ao atualizar status:", data.message);
+        }
+      } catch (error) {
+        console.error("Erro na requisição update:", error);
       }
     },
     toggleMenu() {
@@ -110,6 +137,13 @@ export default {
         }
       } catch (error) {
         console.error("Erro ao deslogar:", error);
+      }
+    }
+  },
+  watch: {
+    userStatus(newStatus, oldStatus) {
+      if (newStatus !== oldStatus) {
+        this.updateUserStatus();
       }
     }
   },
