@@ -1,98 +1,224 @@
 <script>
 export default {
-    name: "Navbar",
+  name: "Navbar",
   data() {
     return {
+      isAuthenticated: false,
+      userData: null,
       isMenuOpen: false,
+      statusOptions: [],
+      userStatus: null,
       links: [
-        { text: "Fila", url: "/" },
+        { text: "Minha Fila", url: "/" },
         { text: "Pedidos", url: "#/orders" },
         { text: "Regras", url: "#/rules" },
-      ]
+      ],
     };
   },
   methods: {
+    async checkAuth() {
+      try {
+        const response = await fetch("/backend/controllers/authController.php", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "include"
+        });
+
+        if (!response.ok) throw new Error("Erro ao verificar autenticação");
+
+        const data = await response.json();
+        if (data.user_session) {
+          this.isAuthenticated = true;
+          this.userData = data.user_session;
+        }
+      } catch (error) {
+        console.error("Erro na verificação de autenticação:", error);
+      }
+    },
+    async getUserStatus() {
+
+      try {
+        const response = await fetch('/backend/controllers/statusController.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: "include",
+          body: JSON.stringify({ id: this.userData.id })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+          this.userStatus = data.id_status;
+          console.log("User status: " + this.userStatus);
+        } else {
+          console.log(data.status);
+        }
+      } catch (error) {
+        console.error('Erro na requisição:', error);
+      }
+    },
+    async getAllStatus(){
+      try {
+        const response = await fetch('/backend/controllers/statusController.php', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+          this.statusOptions = data.status_list;
+          console.log("Status Options: " + data);
+        }
+      } catch (error) {
+        console.error('Erro na requisição:', error);
+      }
+    },
+    async updateUserStatus() {
+      if (!this.userData) return;
+
+      try {
+        const response = await fetch('/backend/controllers/statusController.php', {
+          method: 'PUT', 
+          headers: { 'Content-Type': 'application/json' },
+          credentials: "include",
+          body: JSON.stringify({
+            id: this.userData.id,
+            new_status: this.userStatus
+          })
+        });
+
+        const data = await response.json();
+
+        console.log("updateUserStatus: " + data);
+
+        if (data.status === 'success') {
+          console.log("Status atualizado com sucesso!");
+        } else {
+          console.error("Erro ao atualizar status:", data.message);
+        }
+      } catch (error) {
+        console.error("Erro na requisição update:", error);
+      }
+    },
     toggleMenu() {
       this.isMenuOpen = !this.isMenuOpen;
+    },
+    async logout() {
+      this.isAuthenticated = false;
+      this.userData = null;
+
+      try {
+        const response = await fetch("/backend/controllers/authController.php", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" }
+        });
+
+        const data = await response.json();
+
+        if (data.status == 'success') {
+          Swal.fire({
+            title: "Deslogado",
+            text: "Deslogado com sucesso!",
+            icon: "success",
+          });
+        } else {
+          Swal.fire({
+            title: "Ocorreu um erro",
+            text: "Não foi possível deslogar!",
+            icon: "error",
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao deslogar:", error);
+      }
     }
+  },
+  watch: {
+    userStatus(newStatus, oldStatus) {
+      if (newStatus !== oldStatus) {
+        this.updateUserStatus();
+      }
+    }
+  },
+  async mounted() {
+    await this.checkAuth();
+    await this.getUserStatus();
+    await this.getAllStatus();
+    console.log(this.userData);
   }
 };
 </script>
 
+
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light">
-    <div class="container-fluid m-2">
-      <a class="navbar-brand" href="#"><img src="/public/assets/images/logo-filazen-text.png"></img></a>
-      <button 
-        class="navbar-toggler" 
-        type="button" 
-        @click="toggleMenu"
-      >
+  <nav class="navbar navbar-expand-lg p-4 border border-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">FilaZen</a>
+      <button class="navbar-toggler" type="button" @click="toggleMenu">
         <span class="navbar-toggler-icon"></span>
       </button>
-      
-      <div class="collapse navbar-collapse" :class="{ 'show': isMenuOpen }">
+
+      <div v-if="isAuthenticated" class="collapse navbar-collapse" :class="{ 'show': isMenuOpen }">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item" v-for="(link, index) in links" :key="index">
             <a class="nav-link" :href="link.url">{{ link.text }}</a>
           </li>
         </ul>
+
+        <!-- Se autenticado, exibe status e dropdown -->
+        <div class="d-flex align-items-center">
+          <select v-model="userStatus" class="form-select me-3">
+            <option v-for="status in statusOptions" :key="status" :value="status.id">
+              {{ status.name }}
+            </option>
+          </select>
+
+          <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+              <img class="rounded-circle" src="">
+              {{ userData?.username }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="#/profile">Perfil</a></li>
+              <li><a class="dropdown-item" href="#/settings">Configurações</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="#" @click="logout">Sair</a></li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
 </template>
 
 <style scoped>
+.border-light {
+  border-color: var(--textVue);
+}
+.navbar {
+  background-color: var(--backgroundVue);
+}
+a {
+  color: var(--textVue);
+}
 .navbar-toggler {
   border: none;
 }
-.navbar {
-  background: linear-gradient(135deg, var(--primaryL), var(--secondaryL));
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center; /* Centraliza todo o conteúdo da navbar */
-}
 
-.container-fluid {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
+/* Ajustes para dropdown e select */
+.form-select {
+  width: auto;
+  min-width: 150px;
 }
-
-.navbar-brand img {
-  max-width: 6rem;
-  height: auto;
+.dropdown-toggle {
+  background: none;
+  border: none;
 }
-
-@media (max-width: 768px) {
-  .navbar-brand img {
-    max-width: 120px; /* Reduz a logo em telas menores */
-  }
-}
-
-.navbar ul {
-  list-style: none;
-  display: flex;
-  flex-grow: 1;
-}
-
-.navbar ul li {
-  display: inline;
-}
-
-.navbar ul li a {
-  text-decoration: none;
-  color: #08545e;
-  transition: color 0.3s;
-}
-
-.navbar ul li a:hover,
-.navbar ul li a.active {
-  color: #7270db;
-  border-bottom: 2px solid #1bb2d0;
-  padding-bottom: 5px;
-}
-
 </style>

@@ -24,7 +24,7 @@
       <div class="container text-center">
         <h1 class="display-2 fw-bold">Bem-vindo ao <span class="highlight">FilaZen</span></h1>
         <p class="lead">A forma mais justa e eficiente de gerenciar filas de atendimento e aumentar as vendas.</p>
-        <button class="btn btn-custom-primary btn-lg mt-4">Saiba Mais</button>
+        <button class="btn btn-primary btn-lg mt-4">Saiba Mais</button>
       </div>
     </section>
 
@@ -108,7 +108,7 @@
         <h2 class="text-white">Pronto para revolucionar sua gestão?</h2>
         <p class="lead text-white">Cadastre-se agora e experimente o <span class="fw-bold">FilaZen</span> gratuitamente.</p>
         <a href="#/register">
-          <button class="btn btn-custom-light btn-lg mt-3">Comece Agora</button>
+          <button class="btn btn-light btn-lg mt-3">Comece Agora</button>
         </a>
       </div>
     </section>
@@ -294,30 +294,5 @@ export default {
 .py-7 {
   padding-top: 9rem !important;
   padding-bottom: 9rem !important;
-}
-
-/* Custom Button Styles */
-.btn-custom-primary {
-  background: var(--primaryVue);
-  border: none;
-  color: white;
-  transition: all 0.3s ease;
-}
-
-.btn-custom-primary:hover {
-  background: darken(var(--primaryVue), 10%);
-  color: white;
-}
-
-.btn-custom-light {
-  background: var(--secondaryVue);
-  border: none;
-  color: white;
-  transition: all 0.3s ease;
-}
-
-.btn-custom-light:hover {
-  background: darken(var(--secondaryVue), 10%);
-  color: white;
 }
 </style>

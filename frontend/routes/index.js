@@ -25,6 +25,10 @@ const options = {
 const routes = [
     {
         path: "/",
+        component: () => loadModule("/frontend/views/LandingPage.vue", options),
+    },
+    {
+        path: "/queue",
         component: () => loadModule("/frontend/views/Queue.vue", options),
     },
     {
@@ -34,6 +38,14 @@ const routes = [
     {
         path: "/rules",
         component: () => loadModule("/frontend/views/Rules.vue", options),
+    },
+    {
+        path: "/login",
+        component: () => loadModule("/frontend/views/Login.vue", options),
+    },
+    {
+        path: "/register",
+        component: () => loadModule("/frontend/views/Register.vue", options),
     }
 ];
 

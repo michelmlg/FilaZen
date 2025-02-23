@@ -8,6 +8,12 @@ header("Content-Type: application/json");
 // Captura o método da requisição
 $method = $_SERVER['REQUEST_METHOD'];
 
+if ($method == 'POST' && isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {
+    $method = $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'];
+} elseif ($method == 'POST' && isset($_POST['_method'])) {
+    $method = $_POST['_method'];
+}
+
 // Captura os dados do JSON enviado no corpo da requisição
 $inputData = json_decode(file_get_contents("php://input"), true);
 
