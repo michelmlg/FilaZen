@@ -46,6 +46,10 @@ const routes = [
     {
         path: "/register",
         component: () => loadModule("/frontend/views/Register.vue", options),
+    },
+    {
+        path: "/register-order",
+        component: () => loadModule("/frontend/views/RegisterOrder.vue", options),
     }
 ];
 
