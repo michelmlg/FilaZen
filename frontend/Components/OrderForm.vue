@@ -109,20 +109,21 @@
                     status: [],
                     customer: [],
                     seller: [],
-                    origin: ["Presencial", "Online"],
+                    origin: [],
                     value: 0,
                     discount: 0,
                     deliveryDate: "",
                     description: "",
                     notes: "",
                     orderNumber: "",
-                    orderDate: currentDate,
+                    orderDate: "",
                 },
                 currentDate: '',
             };
         },
         mounted() {
             this.getCurrentDate();
+            this.orderData.orderDate = this.currentDate;
         },
          methods: {
             getCurrentDate() {
