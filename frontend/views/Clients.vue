@@ -1,14 +1,29 @@
 <script>
+import ref from 'vue';
 import Navbar from '../Components/Navbar.vue';
 export default {
   name: "Clients",
   components: { Navbar },
+  methods:{
+    async fetchClients() {
+      try {
+        const response = await fetch("/backend/controllers/clientController.php");
+        const data = await response.json();
+        this.clients = data.clients;
+        console.log(this.clients);
+      } catch (error) {
+        console.error("Erro ao buscar clientes:", error);
+      }
+    },
+  },
   data() {
     return {
-      datatable: null
+      datatable: null,
+      clients: [],
     };
   },
-  mounted(){
+  async mounted(){
+    await this.fetchClients();
     var tabela = document.getElementById("clients-table");
 
     if (tabela) {
@@ -55,33 +70,19 @@ export default {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr v-for="(client, index) in clients" :key="client.id">
               <td>
                 <span class="bg-secondary fw-bold rounded ps-2 pe-2 text-light">
-                    #1
+                  #{{ index + 1 }}
                 </span>
               </td>
-              <td>Maria Oliveira</td>
-              <td>123.456.789-00</td>
-              <td>maria@email.com</td>
-              <td>(11) 98765-4321</td>
-              <td><button class="btn btn-sm btn-outline-secondary rounded">Ver</button></td>
+              <td>{{ client.name }}</td>
+              <td>{{ client.cpf }}</td>
+              <td>{{ client.email }}</td>
+              <td>{{ JSON.stringify(client.phones) }}</td>
               <td>
-                <button class="btn btn-secondary btn-sm rounded me-2"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button class="btn btn-danger btn-sm rounded me-2"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary rounded">Ver</button>
               </td>
-            </tr>
-            <tr>
-              <td>
-                <span class="bg-secondary fw-bold rounded ps-2 pe-2 text-light">
-                    #2
-                </span>
-              </td>
-              <td>Maria Oliveira</td>
-              <td>123.456.789-00</td>
-              <td>maria@email.com</td>
-              <td>(11) 98765-4321</td>
-              <td><button class="btn btn-sm btn-outline-secondary rounded">Ver</button></td>
               <td>
                 <button class="btn btn-secondary btn-sm rounded me-2"><i class="fa-solid fa-pen-to-square"></i></button>
                 <button class="btn btn-danger btn-sm rounded me-2"><i class="fa-solid fa-trash"></i></button>
