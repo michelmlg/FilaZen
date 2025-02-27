@@ -36,6 +36,10 @@ const routes = [
         component: () => loadModule("/frontend/views/Orders.vue", options),
     },
     {
+        path: "/clients",
+        component: () => loadModule("/frontend/views/Clients.vue", options),
+    },
+    {
         path: "/rules",
         component: () => loadModule("/frontend/views/Rules.vue", options),
     },

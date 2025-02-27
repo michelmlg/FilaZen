@@ -9,8 +9,9 @@ export default {
       statusOptions: [],
       userStatus: null,
       links: [
-        { text: "Minha Fila", url: "/" },
+        { text: "Minha Fila", url: "#/queue" },
         { text: "Pedidos", url: "#/orders" },
+        { text: "Clientes", url: "#/clients" },
         { text: "Regras", url: "#/rules" },
       ],
     };
