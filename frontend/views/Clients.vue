@@ -1,16 +1,15 @@
 <script>
-import ref from 'vue';
-import Navbar from '../Components/Navbar.vue';
+import ClientForm from '../Components/clients/ClientForm.vue';
 export default {
   name: "Clients",
-  components: { Navbar },
+  components: { ClientForm },
   methods:{
     async fetchClients() {
       try {
         const response = await fetch("/backend/controllers/clientController.php");
         const data = await response.json();
         this.clients = data.clients;
-        console.log(this.clients);
+        console.log(data);
       } catch (error) {
         console.error("Erro ao buscar clientes:", error);
       }
@@ -24,39 +23,42 @@ export default {
   },
   async mounted(){
     await this.fetchClients();
-    var tabela = document.getElementById("clients-table");
+    // var tabela = document.getElementById("clients-table");
 
-    if (tabela) {
-        this.datatable = new DataTable(tabela, {
-            language: {
-                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json"
-            },
-            responsive: true,  // Responsividade
-            paging: true,      // Paginação ativada
-            searching: true,   // Campo de busca ativado
-            ordering: true     // Ordenação das colunas ativada
-        });
-    }
+    // if (tabela) {
+    //     this.datatable = new DataTable(tabela, {
+    //         language: {
+    //             url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json"
+    //         },
+    //         responsive: true,  // Responsividade
+    //         paging: true,      // Paginação ativada
+    //         searching: true,   // Campo de busca ativado
+    //         ordering: true     // Ordenação das colunas ativada
+    //     });
+    // }
   },
   beforeUnmount(){
-    if (this.datatable) {
-      this.datatable.destroy();
-      this.datatable = null;
-    }
+    // if (this.datatable) {
+    //   this.datatable.destroy();
+    //   this.datatable = null;
+    // }
   }
 };
 </script>
 
 <template>
-  <Navbar></Navbar>
-
   <div class="d-flex justify-content-center align-items-center mt-4">
     <div class="card shadow-lg" style="width: 100%; margin-right: 4rem; margin-left: 4rem;">
       <div class="card-header text-center" style="background-color: var(--textVue); color: var(--secondaryVue)">
         <h3>Clientes</h3>
       </div>
-
+      
       <div class="card-body">
+        
+        <div class="mb-4">
+          <ClientForm></ClientForm>
+        </div>
+
         <table id="clients-table" class="table table-striped table-hover">
           <thead>
             <tr>
@@ -79,9 +81,20 @@ export default {
               <td>{{ client.name }}</td>
               <td>{{ client.cpf }}</td>
               <td>{{ client.email }}</td>
-              <td>{{ JSON.stringify(client.phones) }}</td>
               <td>
-                <button class="btn btn-sm btn-outline-secondary rounded">Ver</button>
+                <ul class="list-group">
+                  <li v-for="(phone, index) in client.phones" :key="index" class="list-group-item">
+                    {{ phone }}
+                  </li>
+                </ul>
+              </td>
+              <td>
+                <div>
+                  <button class="btn btn-sm btn-outline-secondary rounded mb-2">Ver</button>
+                  <div>
+                    <span>Cliente Desde: </span>{{ client.created_at }}
+                  </div>
+                </div>
               </td>
               <td>
                 <button class="btn btn-secondary btn-sm rounded me-2"><i class="fa-solid fa-pen-to-square"></i></button>

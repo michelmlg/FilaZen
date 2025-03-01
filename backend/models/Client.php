@@ -89,6 +89,15 @@ class Client {
         );
     }
 
+    public static function getAllPhoneNumbers($pdo, $id) {
+        $sql = "SELECT cn.number FROM client_cellphone_numbers ccn 
+                JOIN cellphone_numbers cn ON ccn.number_id = cn.id 
+                WHERE ccn.client_id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
     // Adicionar número de telefone a um cliente
     public function addCellphoneNumber($pdo, $number) {
         try {
@@ -145,7 +154,7 @@ class Client {
 
     // Listar todos os clientes
     public static function getAllClients($pdo) {
-        $sql = "SELECT * FROM client ORDER BY created_at DESC";
+        $sql = "SELECT * FROM client";
         $stmt = $pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

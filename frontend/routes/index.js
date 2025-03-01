@@ -28,22 +28,6 @@ const routes = [
         component: () => loadModule("/frontend/views/LandingPage.vue", options),
     },
     {
-        path: "/queue",
-        component: () => loadModule("/frontend/views/Queue.vue", options),
-    },
-    {
-        path: "/orders",
-        component: () => loadModule("/frontend/views/Orders.vue", options),
-    },
-    {
-        path: "/clients",
-        component: () => loadModule("/frontend/views/Clients.vue", options),
-    },
-    {
-        path: "/rules",
-        component: () => loadModule("/frontend/views/Rules.vue", options),
-    },
-    {
         path: "/login",
         component: () => loadModule("/frontend/views/Login.vue", options),
     },
@@ -52,8 +36,54 @@ const routes = [
         component: () => loadModule("/frontend/views/Register.vue", options),
     },
     {
+        path: "/queue",
+        component: () => loadModule("/frontend/SystemLayout.vue", options),
+        children: [
+            {
+                path: '', 
+                component: () => loadModule("/frontend/views/Queue.vue", options),
+            }
+        ]
+    },
+    {
+        path: "/orders",
+        component: () => loadModule("/frontend/SystemLayout.vue", options),
+        children: [
+            {
+                path: '', 
+                component: () => loadModule("/frontend/views/Orders.vue", options),
+            }
+        ]
+    },
+    {
+        path: "/clients",
+        component: () => loadModule("/frontend/SystemLayout.vue", options), 
+        children: [
+            {
+                path: '', 
+                component: () => loadModule("/frontend/views/Clients.vue", options), 
+            }
+        ]
+    },
+    {
+        path: "/rules",
+        component: () => loadModule("/frontend/SystemLayout.vue", options), 
+        children: [
+            {
+                path: '', 
+                component: () => loadModule("/frontend/views/Rules.vue", options),
+            }
+        ]
+    },
+    {
         path: "/register-order",
-        component: () => loadModule("/frontend/views/RegisterOrder.vue", options),
+        component: () => loadModule("/frontend/SystemLayout.vue", options),
+        children: [
+            {
+                path: '', 
+                component: () => loadModule("/frontend/views/RegisterOrder.vue", options),
+            }
+        ]
     }
 ];
 

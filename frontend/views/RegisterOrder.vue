@@ -1,13 +1,10 @@
 <script>
-import Navbar from '../Components/Navbar.vue';
-import RegisterForm from '../Components/OrderForm.vue';
+import RegisterForm from '../Components/order/OrderForm.vue';
 export default {
   name: "Register",
-  components: { Navbar,
-    RegisterForm }
+  components: { RegisterForm }
 };
 </script>
 <template>
-    <navbar></navbar>
     <RegisterForm></RegisterForm>
 </template>

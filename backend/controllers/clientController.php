@@ -21,7 +21,12 @@ try {
     $pdo = getConnection();
 
     if ($method == 'GET') {
+
         $clients = Client::getAllClients($pdo);
+        
+        foreach($clients as $key => $client) {
+            $clients[$key]['phones'] = Client::getAllPhoneNumbers($pdo, $client['id']);
+        }
 
         if (count($clients) == 0) {
             echo json_encode(["status" => "success", "message" => "Nenhum cliente encontrado"]);
