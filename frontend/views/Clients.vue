@@ -1,8 +1,9 @@
 <script>
 import ClientForm from '../Components/clients/ClientForm.vue';
+import TableSkeleton from '../Components/skeleton/TableSkeleton.vue';
 export default {
   name: "Clients",
-  components: { ClientForm },
+  components: { ClientForm, TableSkeleton },
   methods:{
     async fetchClients() {
       try {
@@ -105,6 +106,9 @@ export default {
         </table>
       </div>
     </div>
+  </div>
+  <div>
+    <TableSkeleton></TableSkeleton>
   </div>
 </template>
 

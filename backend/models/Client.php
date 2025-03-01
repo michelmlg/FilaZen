@@ -152,10 +152,30 @@ class Client {
         }
     }
 
-    // Listar todos os clientes
-    public static function getAllClients($pdo) {
-        $sql = "SELECT * FROM client";
-        $stmt = $pdo->query($sql);
+    // Listar todos os clientes com paginação e busca
+    public static function getAllClientsList($pdo, $limit, $page, $search = null) {
+        $offset = ($page - 1) * $limit;
+        $sql = "SELECT id, cpf, name, email, created_at, updated_at FROM client";
+        $params = [];
+
+        if (!empty($search)) {
+            $sql .= " WHERE name LIKE :search OR email LIKE :search OR cpf LIKE :search";
+            $params[':search'] = '%' . $search . '%';
+        }
+
+        $sql .= " LIMIT :limit OFFSET :offset";
+        $params[':limit'] = (int) $limit;
+        $params[':offset'] = (int) $offset;
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':limit', (int) $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', (int) $offset, PDO::PARAM_INT);
+    
+        if (!empty($search)) {
+            $stmt->bindValue(':search', '%' . $search . '%', PDO::PARAM_STR);
+        }
+
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

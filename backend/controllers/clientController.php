@@ -22,7 +22,11 @@ try {
 
     if ($method == 'GET') {
 
-        $clients = Client::getAllClients($pdo);
+        $limit = $inputData['limit'] ?? 10;
+        $page = $inputData['page'] ?? 1;
+        $search = $inputData['search'] ?? null;
+
+        $clients = Client::getAllClientsList($pdo, $limit, $page, $search);
         
         foreach($clients as $key => $client) {
             $clients[$key]['phones'] = Client::getAllPhoneNumbers($pdo, $client['id']);
