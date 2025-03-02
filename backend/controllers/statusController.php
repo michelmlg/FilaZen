@@ -78,3 +78,5 @@ if ($method == 'PUT') {
     }
     exit;
 }
+
+?>
