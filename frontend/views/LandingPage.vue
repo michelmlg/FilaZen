@@ -1,7 +1,7 @@
 <template>
    <nav class="navbar navbar-expand-lg navbar-light bg-white border border-light">
     <div class="container-fluid">
-      <img src="/public/assets/FILAZEN-LOGO.svg" alt="Filazen Logo" class="d-inline-block align-middle ms-4 mt-2 mb-2" style="height: 40px; width: auto;">
+      <a class="navbar-brand fw-bold textVue" href="#">FilaZen</a>
       <button class="navbar-toggler" type="button" @click="toggleMenu">
         <span class="navbar-toggler-icon"></span>
       </button>

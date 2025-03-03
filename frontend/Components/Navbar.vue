@@ -9,9 +9,8 @@ export default {
       statusOptions: [],
       userStatus: null,
       links: [
-        { text: "Minha Fila", url: "#/queue" },
+        { text: "Minha Fila", url: "/" },
         { text: "Pedidos", url: "#/orders" },
-        { text: "Clientes", url: "#/clients" },
         { text: "Regras", url: "#/rules" },
       ],
     };
@@ -159,16 +158,14 @@ export default {
 
 
 <template>
-  <nav class="navbar navbar-expand-lg p-2 border border-light">
+  <nav class="navbar navbar-expand-lg p-4 border border-light">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">
-        <img src="/public/assets/FILAZEN-LOGO.svg" alt="Filazen Logo" class="d-inline-block align-middle ms-4 mt-2 mb-2" style="height: 30px; width: auto;">
-      </a>
+      <a class="navbar-brand" href="#">FilaZen</a>
       <button class="navbar-toggler" type="button" @click="toggleMenu">
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <div v-if="isAuthenticated" class="collapse navbar-collapse " :class="{ 'show': isMenuOpen }">
+      <div v-if="isAuthenticated" class="collapse navbar-collapse" :class="{ 'show': isMenuOpen }">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item" v-for="(link, index) in links" :key="index">
             <a class="nav-link" :href="link.url">{{ link.text }}</a>
