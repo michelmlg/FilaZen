@@ -1,6 +1,9 @@
 <script>
+import Navbar from '../Components/Navbar.vue';
+
 export default {
   name: "Home",
+  components: { Navbar },
   data() {
     return {
       usuarios: [],  // Inicialmente vazia, será preenchida com os dados da fila
@@ -43,6 +46,7 @@ export default {
 </script>
 
 <template>
+  <Navbar></Navbar>
   <section class="fila-container ms-2 me-2 d-flex justify-content-between">
     <div class="w-70">
       <h2 class="mb-2">A vez é de</h2>
