@@ -1,5 +1,6 @@
 <template>
-  <div class="d-flex justify-content-center align-items-center min-vh-100">
+  <div class="d-flex flex-column justify-content-center align-items-center min-vh-100">
+    <img src="/public/assets/FILAZEN-LOGO.svg" alt="Filazen Logo" style="height: 80px; width: auto; margin-bottom: 6rem;">
     <!-- Card de Registro -->
     <div class="card shadow-lg" style="max-width: 400px; width: 100%;">
       <div class="card-header text-center" style="background-color: var(--textVue); color: var(--secondaryVue)">
@@ -21,9 +22,14 @@
             <label class="form-label">Nome Completo</label>
             <input type="text" v-model="newUser.full_name" class="form-control" required />
           </div>
-          <div class="mb-3">
-            <label class="form-label">Senha</label>
-            <input type="password" v-model="newUser.password" class="form-control" required />
+          <div class="mb-3 position-relative">
+              <label class="form-label">Senha</label>
+              <div class="input-group">
+                  <input :type="showPassword ? 'text' : 'password'" v-model="newUser.password" class="form-control" required />
+                  <button type="button form-control" class="btn-eye" @click="togglePasswordVisibility">
+                      <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                  </button>
+              </div>
           </div>
           <button type="submit" class="btn btn-primary w-100">
             <i class="fas fa-user-plus"></i> Registrar
@@ -49,6 +55,7 @@ export default {
         password: "",
       },
       users: [],
+      showPassword: false,
     };
   },
   methods: {
@@ -87,19 +94,21 @@ export default {
       this.newUser.full_name = "";
       this.newUser.password = "";
     },
+    togglePasswordVisibility() {
+        this.showPassword = !this.showPassword;
+    },
   },
 };
 </script>
 
 <style scoped>
-/* Customização do Card */
 .card {
   border-radius: 15px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   background-color: #f9f9f9;
 }
 
-label{
+label {
   color: var(--textVue);
 }
 
@@ -118,11 +127,7 @@ label{
 }
 
 form .form-control {
-  border-radius: 10px;
-}
-
-.bg-primary{
-  background-color: var(--primaryVue);
+  border-radius: 10px !important;
 }
 
 .btn {
@@ -130,6 +135,7 @@ form .form-control {
   font-weight: bold;
   padding: 0.75rem;
 }
+
 .btn-primary {
   color: var(--textVue);
   background-color: var(--primaryVue);
@@ -142,5 +148,16 @@ form .form-control {
 
 .text-primary:hover {
   color: var(--primaryVue) !important;
+}
+
+.btn-eye {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 </style>
