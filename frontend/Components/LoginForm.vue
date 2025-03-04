@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex flex-column justify-content-center align-items-center min-vh-100">
-    <img src="/public/assets/FILAZEN-LOGO.svg" alt="Filazen Logo" style="height: 80px; width: auto; margin-bottom: 6rem;">
+    <img src="/public/assets/FILAZEN-LOGO.svg" alt="Filazen Logo" style="height: 80px; width: auto; margin-bottom: 4rem;">
     <div class="card shadow-lg" style="max-width: 400px; width: 100%;">
       <div class="card-header text-center" style="background-color: var(--textVue); color: var(--secondaryVue)">
         <h3>Login</h3>
@@ -89,7 +89,7 @@ export default {
                       timerProgressBar: true,
                       showConfirmButton: false,
                   });
-                  window.location.replace("#/queue");
+                  window.location.replace("#/dashboard/queue");
                   } else {
                   Swal.fire({
                       title: "Erro",

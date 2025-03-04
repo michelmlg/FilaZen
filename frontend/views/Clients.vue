@@ -20,6 +20,14 @@ export default {
     return {
       datatable: null,
       clients: [],
+      headers: [
+        "Nome Completo",
+        "CPF",
+        "E-mail",
+        "Telefones",
+        "Histórico de Atendimento",
+        "Ações",
+      ],
     };
   },
   async mounted(){
@@ -108,7 +116,7 @@ export default {
     </div>
   </div>
   <div>
-    <TableSkeleton></TableSkeleton>
+    <TableSkeleton apiUrl="/backend/controllers/clientController.php" :headers="headers"></TableSkeleton>
   </div>
 </template>
 

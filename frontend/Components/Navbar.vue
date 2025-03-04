@@ -9,10 +9,10 @@ export default {
       statusOptions: [],
       userStatus: null,
       links: [
-        { text: "Minha Fila", url: "#/queue" },
-        { text: "Pedidos", url: "#/orders" },
-        { text: "Clientes", url: "#/clients" },
-        { text: "Regras", url: "#/rules" },
+        { text: "Minha Fila", url: "#/dashboard/queue" },
+        { text: "Pedidos", url: "#/dashboard/orders" },
+        { text: "Clientes", url: "#/dashboard/clients" },
+        { text: "Regras", url: "#/dashboard/rules" },
       ],
     };
   },
@@ -30,6 +30,7 @@ export default {
         if (!response.ok) throw new Error("Erro ao verificar autenticação");
 
         const data = await response.json();
+        console.log(data);
         if (data.user_session) {
           this.isAuthenticated = true;
           this.userData = data.user_session;
@@ -129,6 +130,7 @@ export default {
             text: "Deslogado com sucesso!",
             icon: "success",
           });
+          this.$router.push('/');
         } else {
           Swal.fire({
             title: "Ocorreu um erro",
@@ -185,8 +187,8 @@ export default {
 
           <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-              <img class="rounded-circle" src="">
-              {{ userData?.username }}
+              <img class="rounded-circle me-2" :src="userData?.img_path" alt="Avatar" style="height: 40px; width: 40px;">
+              <span class="username">{{ userData?.username }}</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
               <li><a class="dropdown-item" href="#/profile">Perfil</a></li>
@@ -213,6 +215,10 @@ a {
 }
 .navbar-toggler {
   border: none;
+}
+.username {
+  color: var(--textVue);
+  font-weight: bold;
 }
 
 /* Ajustes para dropdown e select */
