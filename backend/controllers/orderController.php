@@ -6,97 +6,86 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
 header("Content-Type: application/json");
 
-$pdo = getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
+
+if ($method == 'POST' && isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {
+    $method = $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'];
+} elseif ($method == 'POST' && isset($_POST['_method'])) {
+    $method = $_POST['_method'];
+}
+
 $inputData = json_decode(file_get_contents("php://input"), true);
 
 if ($method == 'GET') {
-    if (isset($_GET['id'])) {
-        $order = new Order();
-        $result = $order->getOrderById($pdo, $_GET['id']);
-    } else {
-        $result = Order::getAllOrders($pdo);
-    }
+    try {
+        $pdo = getConnection();
 
-    echo json_encode(["status" => "success", "data" => $result]);
+        $orders = Order::getAllOrders($pdo);
+
+        echo json_encode(["status" => "success", "data" => $orders]);
+    } catch (Exception $e) {
+        echo json_encode(["status" => "error", "message" => "Erro ao buscar pedidos: " . $e->getMessage()]);
+    } finally {
+        $pdo = null;
+    }
     exit;
 }
 
 if ($method == 'POST') {
     try {
+        $pdo = getConnection();
+        
+        if (!isset($inputData['status_id'], $inputData['client_id'], 
+                  $inputData['employee_id'], $inputData['description'], 
+                  $inputData['origin_id'])) {
+            echo json_encode([
+                "status" => "error", 
+                "message" => "Campos obrigatórios ausentes", 
+                "campos" => $inputData
+            ]);
+            exit;
+        }
+
+        $estimated_value = $inputData['estimated_value'] ?? 0.00;
+        $discount = $inputData['discount'] ?? 0.00;
+        $expected_delivery_date = $inputData['expected_delivery_date'] ?? null;
+        $notes = $inputData['notes'] ?? null;
+
         $order = new Order(
             $inputData['status_id'],
             $inputData['client_id'],
             $inputData['employee_id'],
             $inputData['description'],
-            $inputData['estimated_value'],
-            $inputData['discount'],
-            $inputData['expected_delivery_date'],
-            $inputData['notes'],
-            $inputData['origin_id']
+            $inputData['origin_id'],
+            $estimated_value,
+            $discount,
+            $expected_delivery_date,
+            $notes
         );
-
+        
         $id = $order->store($pdo);
-        
-        echo json_encode(["status" => "success", "message" => "Pedido criado com sucesso!", "id" => $id]);
-    } catch (Exception $e) {
-        echo json_encode(["status" => "error", "message" => "Erro ao criar pedido: " . $e->getMessage()]);
-    }
-    exit;
-}
 
-if ($method == 'PUT') {
-    if (!isset($_GET['id'])) {
-        echo json_encode(["status" => "error", "message" => "ID do pedido é obrigatório."]);
-        exit;
-    }
-
-    try {
-        $order = new Order(
-            $inputData['status_id'],
-            $inputData['client_id'],
-            $inputData['employee_id'],
-            $inputData['description'],
-            $inputData['estimated_value'],
-            $inputData['discount'],
-            $inputData['expected_delivery_date'],
-            $inputData['notes'],
-            $inputData['origin_id']
-        );
-
-        $updated = $order->update($pdo, $_GET['id']);
-        
-        if ($updated) {
-            echo json_encode(["status" => "success", "message" => "Pedido atualizado com sucesso!"]);
+        if($id) {
+            echo json_encode([
+                "status" => "success", 
+                "message" => "Pedido criado com sucesso!", 
+                "id" => $id
+            ]);
         } else {
-            echo json_encode(["status" => "error", "message" => "Falha ao atualizar pedido."]);
+            echo json_encode([
+                "status" => "error", 
+                "message" => "Erro ao inserir pedido"
+            ]);
         }
     } catch (Exception $e) {
-        echo json_encode(["status" => "error", "message" => "Erro ao atualizar pedido: " . $e->getMessage()]);
+        echo json_encode([
+            "status" => "error", 
+            "message" => "Erro ao criar pedido: " . $e->getMessage()
+        ]);
+    } finally {
+        $pdo = null;
     }
     exit;
 }
 
-if ($method == 'DELETE') {
-    if (!isset($_GET['id'])) {
-        echo json_encode(["status" => "error", "message" => "ID do pedido é obrigatório."]);
-        exit;
-    }
-
-    try {
-        $order = new Order();
-        $deleted = $order->delete($pdo, $_GET['id']);
-
-        if ($deleted) {
-            echo json_encode(["status" => "success", "message" => "Pedido excluído com sucesso!"]);
-        } else {
-            echo json_encode(["status" => "error", "message" => "Falha ao excluir pedido."]);
-        }
-    } catch (Exception $e) {
-        echo json_encode(["status" => "error", "message" => "Erro ao excluir pedido: " . $e->getMessage()]);
-    }
-    exit;
-}
-
-echo json_encode(["status" => "error", "message" => "Método não permitido."]);
-exit;
+?>
