@@ -22,22 +22,24 @@ try {
 
     if ($method == 'GET') {
 
-        $limit = $inputData['limit'] ?? 10;
-        $page = $inputData['page'] ?? 1;
-        $search = $inputData['search'] ?? null;
+        $limit = $_GET['limit'] ?? 10;
+        $page = $_GET['page'] ?? 1;
+        $search = $_GET['search'] ?? null;
 
         $clients = Client::getAllClientsList($pdo, $limit, $page, $search);
         
         foreach($clients as $key => $client) {
             $clients[$key]['phones'] = Client::getAllPhoneNumbers($pdo, $client['id']);
         }
+        
+        $totalPages = Client::getTotalPages($pdo, $limit, $search);
 
         if (count($clients) == 0) {
             echo json_encode(["status" => "success", "message" => "Nenhum cliente encontrado"]);
             exit;
         }
 
-        echo json_encode(["status" => "success", "clients" => $clients]);
+        echo json_encode(["status" => "success", "clients" => $clients, "totalPages" => $totalPages]);
     }
 
     if ($method == 'POST') {

@@ -34,11 +34,12 @@
                             </div>
                             <div v-if="clientData.phones.length != 0" class="input-group mb-2 mt-2">
                                 <p class="m-0">Phones List:</p>
-                                <ul class="list-group w-100">
-                                    <li v-for="(phone, index) in clientData.phones" :key="index" class="list-group-item"> 
-                                        <span>Phone: {{ index + 1 }}: </span>
-                                        {{ phone }}
-                                        <button type="button" class="btn btn-sm btn-danger" @click="removePhone(index)"><i class="fa fa-trash"></i></button>
+                                <ul class="list-group w-100 rounded">
+                                    <li v-for="(phone, index) in clientData.phones" :key="index" class="list-group-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Phone: {{ index + 1 }}: {{ phone }}</span>
+                                            <button type="button" class="btn btn-sm btn-danger" @click="removePhone(index)"><i class="fa fa-trash"></i></button>
+                                        </div>
                                     </li>
                                 </ul>
                             </div>

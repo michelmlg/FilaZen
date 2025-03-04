@@ -179,6 +179,31 @@ class Client {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public static function countAllClients($pdo, $search = null) {
+        $sql = "SELECT COUNT(*) as total FROM client";
+        $params = [];
+
+        if (!empty($search)) {
+            $sql .= " WHERE name LIKE :search OR email LIKE :search OR cpf LIKE :search";
+            $params[':search'] = '%' . $search . '%';
+        }
+
+        $stmt = $pdo->prepare($sql);
+
+        if (!empty($search)) {
+            $stmt->bindValue(':search', '%' . $search . '%', PDO::PARAM_STR);
+        }
+
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+
+    public static function getTotalPages($pdo, $limit, $search = null) {
+        $totalClients = self::countAllClients($pdo, $search);
+        return ceil($totalClients / $limit);
+    }
+
     // Getters
     public function getId() {
         return $this->id;
