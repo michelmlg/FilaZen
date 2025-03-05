@@ -1,36 +1,52 @@
 <template>
   <div class="container">
-    <div class="d-flex justify-content-end align-items-center gap-2">
-      <section class="input-group">
-        <input type="text" v-model="tableData.searchQuery" class="form-control">
-        <button class="btn btn-outline-primary" type="button" id="button-addon2"><i class="fa fa-search"></i></button>
-      </section>
-      <section>
-        <ul class="pagination">
-          <li class="page-item" :class="{ disabled: tableData.currentPage === 1 }">
-            <button class="page-link" @click="goToPage(1)"><i class="fa-solid fa-angles-left"></i></button>
-          </li>
-          <li class="page-item" :class="{ disabled: tableData.currentPage === 1 }">
-            <button class="page-link" @click="prevPage"><i class="fa-solid fa-angle-left"></i></button>
-          </li>
-          <li class="page-item active">
-            <span class="page-link">{{ tableData.currentPage }}</span>
-          </li>
-          <li class="page-item">
-            <button class="page-link" @click="nextPage"><i class="fa-solid fa-angle-right"></i></button>
-          </li>
-        </ul>
-      </section>
+    <!-- Barra de Pesquisa -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="input-group">
+        <input 
+          type="text" 
+          v-model="searchQuery" 
+          class="form-control" 
+          placeholder="Buscar..." 
+          @input="fetchData"
+        />
+        <button class="btn btn-outline-primary">
+          <i class="fa fa-search"></i>
+        </button>
+        <!-- Controles de Paginação -->
+      </div>
+      <div>
+        <button 
+          class="btn btn-sm btn-outline-secondary me-2"
+          :disabled="currentPage === 1" 
+          @click="changePage(currentPage - 1)"
+        >
+          <i class="fa-solid fa-angle-left"></i>
+        </button>
+        <span>Página {{ currentPage }}</span>
+        <button 
+          class="btn btn-sm btn-outline-secondary ms-2" 
+          :disabled="!hasNextPage" 
+          @click="changePage(currentPage + 1)"
+        >
+          <i class="fa-solid fa-angle-right"></i>
+        </button>
+      </div>
     </div>
+
+    <!-- Tabela -->
     <table class="table table-striped">
       <thead>
         <tr>
-          <th v-for="(header, index) in headers" :key="index">{{ header }}</th>
+          <th v-for="(header, index) in headers" :key="index">
+            {{ header }}
+          </th>
         </tr>
       </thead>
       <tbody>
-        <tr v-if="tableData.items" v-for="(item, index) in tableData.items" :key="index">
-          <td v-for="(value, key) in item" :key="key">{{ value }}</td>
+        <tr v-for="item in data" :key="item.id">
+          <!-- Slot para personalizar cada linha -->
+          <slot :row="item"></slot>
         </tr>
       </tbody>
     </table>
@@ -39,53 +55,47 @@
 
 <script>
 export default {
-props: {
-  apiUrl: String,
-  headers: Array,
-},
-data() {
-  return {
-    tableData: {
-      items: [],
+  props: {
+    apiUrl: {
+      type: String,
+      required: true,
+    },
+    headers: {
+      type: Array,
+      required: true,
+    },
+    perPage: {
+      type: Number,
+      default: 10,
+    },
+  },
+  data() {
+    return {
+      data: [],
+      searchQuery: '',
       currentPage: 1,
-      searchQuery: "",
-      perPage: 10,
-    }
-  };
-},
-methods: {
-  async fetchData() {
-    let url = this.apiUrl + `?limit=${this.tableData.perPage}&page=${this.tableData.currentPage}`;
-
-    if (this.tableData.searchQuery) {
-      url += `&search=${this.tableData.searchQuery}`;
-    }
-
-    const response = await fetch(url);
-    const data = await response.json();
-
-    console.log("TableSkeleton load data: " + JSON.stringify(data));
-    this.tableData.items = data.clients;
+      hasNextPage: false,
+    };
   },
-  goToPage(page) {
-    if (page >= 1) {
-      this.tableData.currentPage = page;
+  methods: {
+    async fetchData() {
+      try {
+        const response = await fetch(`${this.apiUrl}?limit=${this.perPage}&page=${this.currentPage}&search=${this.searchQuery}`);
+        const result = await response.json();
+        
+        this.data = result.data;
+        this.hasNextPage = result.hasNextPage;
+      } catch (error) {
+        console.error("Erro ao buscar os dados:", error);
+      }
+    },
+    changePage(page) {
+      this.currentPage = page;
       this.fetchData();
     }
   },
-  prevPage() {
-    if (this.tableData.currentPage > 1) {
-      this.tableData.currentPage--;
-      this.fetchData();
-    }
-  },
-  nextPage() {
-    this.tableData.currentPage++;
+  mounted() {
     this.fetchData();
-  }
-},
-async mounted() {
-  await this.fetchData();
-}
+  },
 };
 </script>

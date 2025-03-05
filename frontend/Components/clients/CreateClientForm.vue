@@ -24,21 +24,22 @@
                         </div>
                         <div class="mb-3">
                             <label for="clientCpf" class="form-label">CPF</label>
-                            <input type="text" class="form-control" id="clientCpf" v-model="clientData.cpf" required>
+                            <input type="text" class="form-control cpf-mask" id="clientCpf" v-model="clientData.cpf" required>
                         </div>
                         <div class="mb-3">
                             <label for="clientPhones" class="form-label">Telefones</label>
                             <div class="d-flex gap-2">
-                                <input type="text" class="form-control" v-model="modal.phoneText">
+                                <input type="text" class="form-control phone-mask" v-model="modal.phoneText">
                                 <button type="button" class="btn btn-outline-success" @click="addPhone"><i class="fa fa-plus"></i></button>
                             </div>
                             <div v-if="clientData.phones.length != 0" class="input-group mb-2 mt-2">
                                 <p class="m-0">Phones List:</p>
-                                <ul class="list-group w-100">
-                                    <li v-for="(phone, index) in clientData.phones" :key="index" class="list-group-item"> 
-                                        <span>Phone: {{ index + 1 }}: </span>
-                                        {{ phone }}
-                                        <button type="button" class="btn btn-sm btn-danger" @click="removePhone(index)"><i class="fa fa-trash"></i></button>
+                                <ul class="list-group w-100 rounded">
+                                    <li v-for="(phone, index) in clientData.phones" :key="index" class="list-group-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Phone: {{ index + 1 }}: {{ phone }}</span>
+                                            <button type="button" class="btn btn-sm btn-danger" @click="removePhone(index)"><i class="fa fa-trash"></i></button>
+                                        </div>
                                     </li>
                                 </ul>
                             </div>
@@ -57,7 +58,7 @@
 
 <script>
 export default{
-    name: "ClientForm",
+    name: "CreateClientForm",
     data(){
         return{
             modal:{
@@ -101,6 +102,25 @@ export default{
             console.log(response);
         }
 
+    },
+    mounted(){
+        //Definindo máscaras
+        this.$nextTick(() => {
+        const cpfInput = document.querySelectorAll('.cpf-mask');
+        cpfInput.forEach(input => {
+            IMask(input, { mask: '000.000.000-00' });
+        });
+
+        const phoneInputs = document.querySelectorAll('.phone-mask');
+        phoneInputs.forEach(input => {
+            IMask(input, {
+            mask: [
+                { mask: '(00) 0000-0000' }, 
+                { mask: '(00) 00000-0000' }
+            ]
+            });
+        });
+        });
     }
 
 

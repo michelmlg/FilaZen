@@ -22,22 +22,24 @@ try {
 
     if ($method == 'GET') {
 
-        $limit = $inputData['limit'] ?? 10;
-        $page = $inputData['page'] ?? 1;
-        $search = $inputData['search'] ?? null;
+        $limit = $_GET['limit'] ?? 10;
+        $page = $_GET['page'] ?? 1;
+        $search = $_GET['search'] ?? null;
 
         $clients = Client::getAllClientsList($pdo, $limit, $page, $search);
         
         foreach($clients as $key => $client) {
             $clients[$key]['phones'] = Client::getAllPhoneNumbers($pdo, $client['id']);
         }
+        
+        $totalPages = Client::getTotalPages($pdo, $limit, $search);
 
         if (count($clients) == 0) {
             echo json_encode(["status" => "success", "message" => "Nenhum cliente encontrado"]);
             exit;
         }
 
-        echo json_encode(["status" => "success", "clients" => $clients]);
+        echo json_encode(["status" => "success", "clients" => $clients, "totalPages" => $totalPages]);
     }
 
     if ($method == 'POST') {
@@ -66,14 +68,20 @@ try {
         $cpf = $inputData['cpf'] ?? '';
         $name = $inputData['name'] ?? '';
         $email = $inputData['email'] ?? '';
+        $phones = $inputData['phones'] ?? [];
 
         if (!$clientId || !$cpf || !$name || !$email) {
             throw new Exception("ID do cliente, CPF, nome e e-mail são obrigatórios.");
         }
 
-        $client = new Client($clientId, $cpf, $name, $email);
+        $client = new Client($clientId, $cpf, $name, $email, null, $phones);
+
+        if(!$client){
+            throw new Exception("Error ao instanciar cliente no controller.");	
+        }
+        
         if ($client->update($pdo)) {
-            echo json_encode(["status" => "success", "message" => "Cliente atualizado com sucesso."]);
+            echo json_encode(["status" => "success", "message" => "Cliente atualizado com sucesso.", "updatedClient" => $client, "clientId" => $clientId, "cpf" => $cpf, "name" => $name, "email" => $email, "phones" => $phones]);
         } else {
             throw new Exception("Erro ao atualizar cliente.");
         }

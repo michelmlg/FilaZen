@@ -1,25 +1,52 @@
 <script>
-import ClientForm from '../Components/clients/ClientForm.vue';
+import CreateClientForm from '../Components/clients/CreateClientForm.vue';
+import UpdateClientForm from '../Components/clients/UpdateClientForm.vue';
 import TableSkeleton from '../Components/skeleton/TableSkeleton.vue';
 export default {
   name: "Clients",
-  components: { ClientForm, TableSkeleton },
+  components: { CreateClientForm, UpdateClientForm, TableSkeleton },
   methods:{
     async fetchClients() {
       try {
-        const response = await fetch("/backend/controllers/clientController.php");
-        const data = await response.json();
-        this.clients = data.clients;
-        console.log(data);
+        const response = await fetch(`${this.apiUrl}?limit=${this.table.limit}&page=${this.table.page}&search=${this.table.search}`);
+        const result = await response.json();
+        
+        console.log(result);
+        this.table.clients = result.clients;
+        this.table.totalPages = result.totalPages;
       } catch (error) {
-        console.error("Erro ao buscar clientes:", error);
+        console.error("Erro ao buscar os dados:", error);
       }
     },
+    async changePage(page) {
+      if (page < 1 || page > this.table.totalPages) {
+        return;
+      }
+      this.table.page = page;
+      await this.fetchClients(this.table.page);
+    },
+    openUpdateClient(client){
+      this.updateModal.client = client;
+      modal = new bootstrap.Modal(document.getElementById('updateClientModal'));
+      modal.show();
+    }
+  },
+  computed: {
+    pageHasClients() {
+      return Array.isArray(this.table.clients) && this.table.clients.length > 0;
+    }
   },
   data() {
     return {
-      datatable: null,
-      clients: [],
+      apiUrl: "/backend/controllers/clientController.php",
+      table:{
+        page: 1,
+        limit: 10,
+        search: '',
+        clients: [],
+        perPageOptions: [10, 25, 50, 100, 200],
+        totalPages: 0,
+      },
       headers: [
         "Nome Completo",
         "CPF",
@@ -28,29 +55,13 @@ export default {
         "Histórico de Atendimento",
         "Ações",
       ],
+      updateModal:{
+        client: null,
+      }
     };
   },
-  async mounted(){
+  async beforeMount(){
     await this.fetchClients();
-    // var tabela = document.getElementById("clients-table");
-
-    // if (tabela) {
-    //     this.datatable = new DataTable(tabela, {
-    //         language: {
-    //             url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json"
-    //         },
-    //         responsive: true,  // Responsividade
-    //         paging: true,      // Paginação ativada
-    //         searching: true,   // Campo de busca ativado
-    //         ordering: true     // Ordenação das colunas ativada
-    //     });
-    // }
-  },
-  beforeUnmount(){
-    // if (this.datatable) {
-    //   this.datatable.destroy();
-    //   this.datatable = null;
-    // }
   }
 };
 </script>
@@ -65,58 +76,99 @@ export default {
       <div class="card-body">
         
         <div class="mb-4">
-          <ClientForm></ClientForm>
+          <CreateClientForm></CreateClientForm>
+          <UpdateClientForm :clientData="updateModal.client"></UpdateClientForm>
+        </div>
+        <div class="d-flex justify-content-end align-items-center flex-nowrap">
+          <select class="btn border rounded me-2" v-model="table.limit" @change="changePage(1)" style="border-color: var(--secondaryVue) !important; color: var(--secondaryVue) !important;">
+            <option v-for="option in table.perPageOptions" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
+          <button class="btn btn-outline-secondary me-2" @click="changePage(table.page)"><i class="fa fa-rotate-right"></i></button>
+          <div class="input-group me-2" style="max-width: 200px;">
+            <input type="text" class="form-control" v-model="table.search" placeholder="Buscar...">
+            <button class="btn btn-outline-secondary" type="button" id="button-addon2" @click="changePage(table.page)"><i class="fa fa-search"></i></button>
+          </div>
+          
+          <div class="btn-group me-2" role="group" aria-label="First group">
+            <button type="button" :disabled="table.page === 1" class="btn btn-outline-secondary"  @click="changePage(1)"><i class="fa-solid fa-angles-left"></i></button>
+            <button type="button" :disabled="table.page === 1" class="btn btn-outline-secondary" @click="changePage(table.page - 1)"><i class="fa-solid fa-angle-left"></i></button>
+            <div type="text" class="btn btn-outline-secondary">{{ table.page }}</div>
+            <button type="button" :disabled="table.page >= table.totalPages" class="btn btn-outline-secondary" @click="changePage(table.page + 1)">
+              <i class="fa-solid fa-angle-right"></i>
+            </button>
+          </div>
+
         </div>
 
-        <table id="clients-table" class="table table-striped table-hover">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Nome Completo</th>
-              <th>CPF</th>
-              <th>E-mail</th>
-              <th>Telefones</th>
-              <th>Histórico de Atendimento</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(client, index) in clients" :key="client.id">
-              <td>
-                <span class="bg-secondary fw-bold rounded ps-2 pe-2 text-light">
-                  #{{ index + 1 }}
-                </span>
-              </td>
-              <td>{{ client.name }}</td>
-              <td>{{ client.cpf }}</td>
-              <td>{{ client.email }}</td>
-              <td>
-                <ul class="list-group">
-                  <li v-for="(phone, index) in client.phones" :key="index" class="list-group-item">
-                    {{ phone }}
-                  </li>
-                </ul>
-              </td>
-              <td>
-                <div>
-                  <button class="btn btn-sm btn-outline-secondary rounded mb-2">Ver</button>
-                  <div>
-                    <span>Cliente Desde: </span>{{ client.created_at }}
+
+        <div class="border rounded p-2 mt-2" style="border-color: var(--secondaryVue);">
+
+          <table id="clients-table" class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nome Completo</th>
+                <th>CPF</th>
+                <th>E-mail</th>
+                <th>Telefones</th>
+                <th>Histórico de Atendimento</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="!pageHasClients">
+                <td colspan="7">
+                  <div class="d-flex justify-content-center align-items-center">
+                    <span>Nenhum cliente encontrado na página</span>
                   </div>
-                </div>
-              </td>
-              <td>
-                <button class="btn btn-secondary btn-sm rounded me-2"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button class="btn btn-danger btn-sm rounded me-2"><i class="fa-solid fa-trash"></i></button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+              </tr>
+              <tr v-else v-for="(client, index) in table.clients" :key="client.id">
+                <td>
+                  <span class="bg-secondary fw-bold rounded ps-2 pe-2 text-light">
+                    #{{ client.id }}
+                  </span>
+                </td>
+                <td>{{ client.name }}</td>
+                <td>{{ client.cpf }}</td>
+                <td>{{ client.email }}</td>
+                <td>
+                  <div v-if="!client.phones.length">
+                    <span class="text-danger">Nenhum telefone cadastrado!</span>
+                  </div>
+                  <ul v-else class="list-group">
+                    <li v-for="(phone, index) in client.phones" :key="index" class="list-group-item">
+                      {{ phone }}
+                    </li>
+                  </ul>
+                </td>
+                <td>
+                  <div>
+                    <button class="btn btn-sm btn-outline-secondary rounded mb-2">Ver</button>
+                    <div>
+                      <span>Cliente Desde: </span>{{ client.created_at }}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn btn-secondary btn-sm rounded me-2" @click="openUpdateClient(client)"><i class="fa-solid fa-pen-to-square"></i></button>
+                  <button class="btn btn-danger btn-sm rounded me-2"><i class="fa-solid fa-trash"></i></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-footer">
+            <small>
+              Página {{ table.page }} de {{ table.totalPages }}
+            </small>
+          </div>
+        </div>
       </div>
     </div>
   </div>
   <div>
-    <TableSkeleton apiUrl="/backend/controllers/clientController.php" :headers="headers"></TableSkeleton>
   </div>
 </template>
 
