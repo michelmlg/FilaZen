@@ -1,9 +1,10 @@
 <script>
-import ClientForm from '../Components/clients/ClientForm.vue';
+import CreateClientForm from '../Components/clients/CreateClientForm.vue';
+import UpdateClientForm from '../Components/clients/UpdateClientForm.vue';
 import TableSkeleton from '../Components/skeleton/TableSkeleton.vue';
 export default {
   name: "Clients",
-  components: { ClientForm, TableSkeleton },
+  components: { CreateClientForm, UpdateClientForm, TableSkeleton },
   methods:{
     async fetchClients() {
       try {
@@ -23,6 +24,11 @@ export default {
       }
       this.table.page = page;
       await this.fetchClients(this.table.page);
+    },
+    openUpdateClient(client){
+      this.updateModal.client = client;
+      modal = new bootstrap.Modal(document.getElementById('updateClientModal'));
+      modal.show();
     }
   },
   computed: {
@@ -49,9 +55,12 @@ export default {
         "Histórico de Atendimento",
         "Ações",
       ],
+      updateModal:{
+        client: null,
+      }
     };
   },
-  async mounted(){
+  async beforeMount(){
     await this.fetchClients();
   }
 };
@@ -67,7 +76,8 @@ export default {
       <div class="card-body">
         
         <div class="mb-4">
-          <ClientForm></ClientForm>
+          <CreateClientForm></CreateClientForm>
+          <UpdateClientForm :clientData="updateModal.client"></UpdateClientForm>
         </div>
         <div class="d-flex justify-content-end align-items-center flex-nowrap">
           <select class="btn border rounded me-2" v-model="table.limit" @change="changePage(1)" style="border-color: var(--secondaryVue) !important; color: var(--secondaryVue) !important;">
@@ -125,7 +135,10 @@ export default {
                 <td>{{ client.cpf }}</td>
                 <td>{{ client.email }}</td>
                 <td>
-                  <ul class="list-group">
+                  <div v-if="!client.phones.length">
+                    <span class="text-danger">Nenhum telefone cadastrado!</span>
+                  </div>
+                  <ul v-else class="list-group">
                     <li v-for="(phone, index) in client.phones" :key="index" class="list-group-item">
                       {{ phone }}
                     </li>
@@ -140,7 +153,7 @@ export default {
                   </div>
                 </td>
                 <td>
-                  <button class="btn btn-secondary btn-sm rounded me-2"><i class="fa-solid fa-pen-to-square"></i></button>
+                  <button class="btn btn-secondary btn-sm rounded me-2" @click="openUpdateClient(client)"><i class="fa-solid fa-pen-to-square"></i></button>
                   <button class="btn btn-danger btn-sm rounded me-2"><i class="fa-solid fa-trash"></i></button>
                 </td>
               </tr>

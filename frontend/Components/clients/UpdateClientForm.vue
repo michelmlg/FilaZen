@@ -1,15 +1,9 @@
 <template>
-    <div>
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#clientModal" aria-label="Abrir Modal de Cliente">
-            <i class="fa fa-plus"></i>
-        </button>
-    </div>
-
-    <div class="modal fade" id="clientModal" tabindex="-1" aria-labelledby="clientModalLabel" aria-hidden="true">
+    <div v-if="clientData" class="modal fade" id="updateClientModal"  tabindex="-1" aria-labelledby="clientModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="clientModalLabel">Adicionar Cliente</h5>
+                    <h5 class="modal-title" id="clientModalLabel">{{ clientData.id ? 'Editar Cliente' : 'Adicionar Cliente' }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -24,12 +18,12 @@
                         </div>
                         <div class="mb-3">
                             <label for="clientCpf" class="form-label">CPF</label>
-                            <input type="text" class="form-control" id="clientCpf" v-model="clientData.cpf" required>
+                            <input type="text" class="form-control cpf-mask" id="clientCpf" v-model="clientData.cpf" required>
                         </div>
                         <div class="mb-3">
                             <label for="clientPhones" class="form-label">Telefones</label>
                             <div class="d-flex gap-2">
-                                <input type="text" class="form-control" v-model="modal.phoneText">
+                                <input type="text" class="form-control phone-mask" v-model="modal.phoneText">
                                 <button type="button" class="btn btn-outline-success" @click="addPhone"><i class="fa fa-plus"></i></button>
                             </div>
                             <div v-if="clientData.phones.length != 0" class="input-group mb-2 mt-2">
@@ -52,43 +46,49 @@
             </div>
         </div>
     </div>
-
-
 </template>
 
 <script>
-export default{
-    name: "ClientForm",
-    data(){
-        return{
-            modal:{
-                phoneText: null,
-            },
-            clientData:{
+export default {
+    name: "CreateClientForm",
+    props: {
+        clientData: {
+            type: Object,
+            default: () => ({
+                id: null,
                 name: '',
+                cpf: '',
                 email: '',
                 phones: [],
-                cpf: '',	
-            }
-        }
+            }),
+        },
     },
-    methods:{
-        addPhone(){
-            if(this.modal.phoneText == null || this.modal.phoneText == ''){
+    data() {
+        return {
+            modal: {
+                phoneText: null,
+            },
+        };
+    },
+    methods: {
+        addPhone() {
+            if (this.modal.phoneText == null || this.modal.phoneText == '') {
                 return;
             }
             this.clientData.phones.push(this.modal.phoneText);
-            this.newPhone = '';
+            this.modal.phoneText = ''; // Clear the input
         },
-        removePhone(index){
+        removePhone(index) {
             this.clientData.phones.splice(index, 1);
         },
-        submitForm(){
-            console.log("Requisição enviada: " + this.clientData);
-            
-            this.addClient(this.clientData);
+        submitForm() {
+            if (this.clientData.id) {
+                this.updateClient(this.clientData);
+            } else {
+                this.addClient(this.clientData);
+            }
         },
-        async addClient(clientData){
+        async addClient(clientData) {
             const data = await fetch("/backend/controllers/ClientController.php", {
                 method: "POST",
                 headers: {
@@ -98,14 +98,42 @@ export default{
             });
 
             const response = await data.json();
-
             console.log(response);
-        }
+        },
+        async updateClient(clientData) {
+            const data = await fetch(`/backend/controllers/ClientController.php?id=${clientData.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(clientData),
+            });
 
+            const response = await data.json();
+            console.log(response);
+        },
+    },
+    mounted() {
+
+        console.log("UpdateClientForm:" + this.clientData);
+        // Definindo máscaras
+        this.$nextTick(() => {
+            const cpfInput = document.querySelectorAll('.cpf-mask');
+            cpfInput.forEach(input => {
+                IMask(input, { mask: '000.000.000-00' });
+            });
+
+            const phoneInputs = document.querySelectorAll('.phone-mask');
+            phoneInputs.forEach(input => {
+                IMask(input, {
+                    mask: [
+                        { mask: '(00) 0000-0000' },
+                        { mask: '(00) 00000-0000' }
+                    ]
+                });
+            });
+        });
     }
-
-
-}
-
-
+};
 </script>
+

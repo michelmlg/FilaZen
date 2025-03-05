@@ -68,14 +68,20 @@ try {
         $cpf = $inputData['cpf'] ?? '';
         $name = $inputData['name'] ?? '';
         $email = $inputData['email'] ?? '';
+        $phones = $inputData['phones'] ?? [];
 
         if (!$clientId || !$cpf || !$name || !$email) {
             throw new Exception("ID do cliente, CPF, nome e e-mail são obrigatórios.");
         }
 
-        $client = new Client($clientId, $cpf, $name, $email);
+        $client = new Client($clientId, $cpf, $name, $email, null, $phones);
+
+        if(!$client){
+            throw new Exception("Error ao instanciar cliente no controller.");	
+        }
+        
         if ($client->update($pdo)) {
-            echo json_encode(["status" => "success", "message" => "Cliente atualizado com sucesso."]);
+            echo json_encode(["status" => "success", "message" => "Cliente atualizado com sucesso.", "updatedClient" => $client, "clientId" => $clientId, "cpf" => $cpf, "name" => $name, "email" => $email, "phones" => $phones]);
         } else {
             throw new Exception("Erro ao atualizar cliente.");
         }

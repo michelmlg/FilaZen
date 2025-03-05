@@ -49,18 +49,78 @@ class Client {
     // Atualizar cliente
     public function update($pdo) {
         try {
+            $pdo->beginTransaction();
+            
             $sql = "UPDATE client SET cpf = :cpf, name = :name, email = :email WHERE id = :id";
             $stmt = $pdo->prepare($sql);
-            return $stmt->execute([
+            $stmt->execute([
                 ':id' => $this->id,
                 ':cpf' => $this->cpf,
                 ':name' => $this->name,
                 ':email' => $this->email
             ]);
+
+            if (!isset($this->cellphone_numbers) || !is_array($this->cellphone_numbers)) {
+                throw new Exception("Números de telefone inválidos.");
+            }
+
+            $sql = "SELECT cn.number, cn.id FROM cellphone_numbers cn 
+                    JOIN client_cellphone_numbers ccn ON cn.id = ccn.number_id
+                    WHERE ccn.client_id = :client_id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':client_id' => $this->id]);
+            $currentNumbers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // verifica se o telefone não está na lista, caso sim, deleta
+            foreach ($currentNumbers as $currentNumber) {
+                if (!in_array($currentNumber['number'], $this->cellphone_numbers)) {
+                    $sql = "DELETE FROM client_cellphone_numbers 
+                            WHERE client_id = :client_id AND number_id = :number_id";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([':client_id' => $this->id, ':number_id' => $currentNumber['id']]);
+
+                    $sql = "DELETE FROM cellphone_numbers WHERE id = :number_id";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([':number_id' => $currentNumber['id']]);
+                }
+            }
+
+            // adiciona telefones novos a lista do usuário
+            foreach ($this->cellphone_numbers as $number) {
+                $sql = "SELECT cn.id FROM cellphone_numbers cn 
+                        JOIN client_cellphone_numbers ccn ON cn.id = ccn.number_id
+                        WHERE ccn.client_id = :client_id AND cn.number = :number";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([':client_id' => $this->id, ':number' => $number]);
+                $existingNumberId = $stmt->fetchColumn();
+
+                if ($existingNumberId) {
+                    $sql = "UPDATE cellphone_numbers SET number = :number WHERE id = :id";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([':number' => $number, ':id' => $existingNumberId]);
+                } else {
+                
+                    $sql = "INSERT INTO cellphone_numbers (number) VALUES (:number)";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([':number' => $number]);
+                    $numberId = $pdo->lastInsertId();
+
+                
+                    $sql = "INSERT INTO client_cellphone_numbers (client_id, number_id) VALUES (:client_id, :number_id)";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([':client_id' => $this->id, ':number_id' => $numberId]);
+                }
+            }
+
+  
+            $pdo->commit();
+            return true;
         } catch (PDOException $e) {
-            return false;
+            $pdo->rollBack();
+            throw new Exception("Erro ao atualizar cliente: " . $e->getMessage());
         }
     }
+
 
     // Buscar cliente por ID e seus números de telefone
     public static function findById($pdo, $id) {
@@ -128,6 +188,47 @@ class Client {
             return false;
         }
     }
+
+    // Remover número de telefone de um cliente
+    public function removeCellphoneNumber($pdo, $number) {
+        try {
+            // Verificar se o número de telefone existe para o cliente
+            $sql = "SELECT cn.id FROM cellphone_numbers cn 
+                    JOIN client_cellphone_numbers ccn ON cn.id = ccn.number_id
+                    WHERE ccn.client_id = :client_id AND cn.number = :number";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':client_id' => $this->id, ':number' => $number]);
+            $numberId = $stmt->fetchColumn();
+
+            if ($numberId) {
+                // Remover a associação do número de telefone com o cliente
+                $sql = "DELETE FROM client_cellphone_numbers WHERE client_id = :client_id AND number_id = :number_id";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([':client_id' => $this->id, ':number_id' => $numberId]);
+
+                // Se o número não estiver mais associado a nenhum outro cliente, pode ser removido da tabela cellphone_numbers
+                $sql = "SELECT COUNT(*) FROM client_cellphone_numbers WHERE number_id = :number_id";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([':number_id' => $numberId]);
+                $count = $stmt->fetchColumn();
+
+                if ($count == 0) {
+                    // Remover o número de telefone da tabela cellphone_numbers
+                    $sql = "DELETE FROM cellphone_numbers WHERE id = :number_id";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([':number_id' => $numberId]);
+                }
+
+                return true;
+            }
+
+            // Número não encontrado
+            return false;
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
 
     // Excluir cliente e seus números associados
     public static function delete($pdo, $id) {
