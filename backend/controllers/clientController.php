@@ -71,7 +71,7 @@ try {
         $phones = $inputData['phones'] ?? [];
 
         if (!$clientId || !$cpf || !$name || !$email) {
-            throw new Exception("ID do cliente, CPF, nome e e-mail são obrigatórios.");
+            throw new Exception("ID do cliente, CPF, nome e e-mail são obrigatórios." . $clientId . $cpf . $name . $email);
         }
 
         $client = new Client($clientId, $cpf, $name, $email, null, $phones);

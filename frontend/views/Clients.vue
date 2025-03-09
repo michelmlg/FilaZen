@@ -25,11 +25,66 @@ export default {
       this.table.page = page;
       await this.fetchClients(this.table.page);
     },
-    openUpdateClient(client){
+    openUpdateClient(client) {
       this.updateModal.client = client;
-      modal = new bootstrap.Modal(document.getElementById('updateClientModal'));
-      modal.show();
+      this.$nextTick(() => { // Aguarda o Vue atualizar o DOM
+        const modalElement = document.getElementById('updateClientModal');
+        if (modalElement) {
+          const modal = new bootstrap.Modal(modalElement);
+          modal.show();
+        } else {
+          console.error("Modal não encontrado no DOM.");
+        }
+      });
+    },
+    async deleteClient(client) {
+      const confirmation = await Swal.fire({
+        title: `Deletar ${client.name}?`,
+        text: "Essa ação não pode ser desfeita!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Deletar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (!confirmation.isConfirmed) return;
+
+      try {
+        const response = await fetch(`${this.apiUrl}`, {
+          method: 'DELETE',
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ client_id: client.id }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erro ao deletar: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+
+        Swal.fire({
+          title: 'Sucesso!',
+          text: result.message,
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+
+      } catch (error) {
+        Swal.fire({
+          title: 'Erro!',
+          text: error.message || 'Falha ao deletar o cliente.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
     }
+
+
+
   },
   computed: {
     pageHasClients() {
@@ -76,8 +131,8 @@ export default {
       <div class="card-body">
         
         <div class="mb-4">
-          <CreateClientForm></CreateClientForm>
           <UpdateClientForm :clientData="updateModal.client"></UpdateClientForm>
+          <CreateClientForm></CreateClientForm>
         </div>
         <div class="d-flex justify-content-end align-items-center flex-nowrap">
           <select class="btn border rounded me-2" v-model="table.limit" @change="changePage(1)" style="border-color: var(--secondaryVue) !important; color: var(--secondaryVue) !important;">
@@ -154,7 +209,7 @@ export default {
                 </td>
                 <td>
                   <button class="btn btn-secondary btn-sm rounded me-2" @click="openUpdateClient(client)"><i class="fa-solid fa-pen-to-square"></i></button>
-                  <button class="btn btn-danger btn-sm rounded me-2"><i class="fa-solid fa-trash"></i></button>
+                  <button class="btn btn-danger btn-sm rounded me-2" @click="deleteClient(client)"><i class="fa-solid fa-trash"></i></button>
                 </td>
               </tr>
             </tbody>

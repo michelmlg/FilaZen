@@ -106,12 +106,18 @@ export default {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(clientData),
+                body: JSON.stringify({
+                    client_id: clientData.id,
+                    name: clientData.name,
+                    cpf: clientData.cpf,
+                    email: clientData.email,
+                    phones: clientData.phones,
+                }),
             });
 
             const response = await data.json();
             console.log(response);
-        },
+        }
     },
     mounted() {
 
