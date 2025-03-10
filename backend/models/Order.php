@@ -144,6 +144,17 @@ class Order {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public static function getAllOrderStatuses($pdo) {
+        $sql = "SELECT * FROM order_status ORDER BY id ASC";
+        $stmt = $pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function getAllOrderOrigins($pdo) {
+        $sql = "SELECT * FROM order_origin ORDER BY id ASC";
+        $stmt = $pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 
 ?>

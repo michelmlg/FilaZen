@@ -19,12 +19,30 @@ $inputData = json_decode(file_get_contents("php://input"), true);
 if ($method == 'GET') {
     try {
         $pdo = getConnection();
-
-        $orders = Order::getAllOrders($pdo);
-
-        echo json_encode(["status" => "success", "data" => $orders]);
+        
+        // Fetch all order statuses
+        if (isset($_GET['getStatus']) && $_GET['getStatus'] === 'true') {
+            $status_list = Order::getAllOrderStatuses($pdo);
+            echo json_encode([
+                "status" => "success", 
+                "status_list" => $status_list
+            ]);
+        }
+        // Fetch all order origins
+        else if (isset($_GET['getOrigin']) && $_GET['getOrigin'] === 'true') {
+            $origin_list = Order::getAllOrderOrigins($pdo);
+            echo json_encode([
+                "status" => "success", 
+                "origin_list" => $origin_list
+            ]);
+        }
+        // Default: fetch all orders
+        else {
+            $orders = Order::getAllOrders($pdo);
+            echo json_encode(["status" => "success", "data" => $orders]);
+        }
     } catch (Exception $e) {
-        echo json_encode(["status" => "error", "message" => "Erro ao buscar pedidos: " . $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Erro ao processar requisição: " . $e->getMessage()]);
     } finally {
         $pdo = null;
     }
@@ -88,4 +106,3 @@ if ($method == 'POST') {
     exit;
 }
 
-?>
