@@ -8,9 +8,9 @@ export default {
 
 <template>
     <Navbar></Navbar>
-    <main>
+    <div>
       <router-view></router-view>
-    </main>
+    </div>
 </template>
 
 <style>
