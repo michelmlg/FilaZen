@@ -1,0 +1,11 @@
+{
+    "name": "root/backend",
+    "require": {
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "Root\\Backend\\": "models/"
+        }
+    }
+}

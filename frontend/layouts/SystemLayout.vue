@@ -1,16 +1,19 @@
 <script>
-import Navbar from './Components/Navbar.vue';
+import Navbar from '../Components/Navbar.vue';
 export default {
   name: "SystemLayout",
-  components: { Navbar }
+  components: { Navbar },
+  methods: {
+    
+  }
 };
 </script>
 
 <template>
     <Navbar></Navbar>
-    <main>
+    <div>
       <router-view></router-view>
-    </main>
+    </div>
 </template>
 
 <style>

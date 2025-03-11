@@ -37,7 +37,7 @@ const routes = [
     },
     {
         path: "/dashboard",
-        component: () => loadModule("/frontend/SystemLayout.vue", options),
+        component: () => loadModule("/frontend/layouts/SystemLayout.vue", options),
         children: [
             {
                 path: 'queue', 

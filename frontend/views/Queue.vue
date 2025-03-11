@@ -8,7 +8,9 @@ export default {
         clientes: 35,
         compraram: 19,
         conversao: 54
-      }
+      },
+      isUserFirst: false,
+      userData: null
     };
   },
   methods: {
@@ -26,18 +28,50 @@ export default {
         const data = await response.json();
         
         if (data.status === 'success') {
-          this.usuarios = data.queue; // Atualiza a lista de usuários com a fila retornada
-          //this.iniciarFila(); // Inicia a rotação da fila
+          if (data.status === 'success' && Array.isArray(data.queue)) {
+            this.usuarios = data.queue; // Atualiza a lista de usuários com a fila
+            this.isUserFirst = this.usuarios.length > 0 && this.usuarios[0].id+"" == this.userData.id;
+            console.log(this.isUserFirst);
+          } else {
+            console.error('Erro: a fila não é um array ou status não é success', data);
+          }
         } else {
           console.error('Erro ao obter a fila: ', data.message);
         }
       } catch (error) {
         console.error('Erro ao fazer requisição:', error);
       }
-    }
+    },
+    redirecionarParaPedido() {
+      if (this.isUserFirst) {
+        this.$router.push('/dashboard/register-order');
+      }
+    },
+    async checkAuth() {
+      try {
+        const response = await fetch("/backend/controllers/authController.php", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "include"
+        });
+
+        if (!response.ok) throw new Error("Erro ao verificar autenticação");
+
+        const data = await response.json();
+        console.log(data);
+        if (data.user_session) {
+          this.userData = data.user_session;
+        }
+      } catch (error) {
+        console.error("Erro na verificação de autenticação:", error);
+      }
+    },
   },
-  mounted() {
-    this.verificarFila(); // Chama o método para obter a fila assim que o componente for montado
+  async mounted() {
+    await this.checkAuth();
+    await this.verificarFila(); // Chama o método para obter a fila assim que o componente for montado
   }
 };
 </script>
@@ -57,8 +91,19 @@ export default {
     </div>
     <div class="w-30">
       <div class="d-flex flex-column align-items-center">
-          <i class="fa-solid fa-lock"></i>
-          <button class="btn btn-lg btn-outline-secondary botao-abrir btn-big-padding mt-2">Abrir pedido</button>
+          <i v-if="!isUserFirst" class="fa-solid fa-lock"></i>
+          <button
+            v-if="isUserFirst" 
+            class="btn btn-lg btn-outline-secondary botao-abrir btn-big-padding mt-2" 
+            @click="redirecionarParaPedido"> <!-- Chama a função para redirecionar -->
+            Abrir pedido
+          </button>
+          <button 
+            v-else
+            class="btn btn-lg btn-outline-secondary botao-abrir btn-big-padding mt-2" 
+            disabled> <!-- Chama a função para redirecionar -->
+            Você não é o primeiro da fila!
+          </button>
       </div>
 
       <div class="info-venda">
