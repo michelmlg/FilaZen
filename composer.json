@@ -5,7 +5,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Root\\Backend\\": "models/"
+            "Root\\Backend\\": "backend/"
         }
     }
 }
