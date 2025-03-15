@@ -15,7 +15,13 @@ if ($method == 'POST' && isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {
 }
 
 // Captura os dados do JSON enviado no corpo da requisição
-$inputData = json_decode(file_get_contents("php://input"), true);
+$inputData = json_decode(file_get_contents("php://input"), true) ?? $_POST;
+
+if(!$_SESSION){
+    echo json_encode(["status" => "error", "message" => "Essa rota é protegida, faça login para acessá-la."]);
+    exit;
+}
+
 
 
 switch ($method) {

@@ -8,9 +8,14 @@ header("Content-Type: application/json");
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-$inputData = json_decode(file_get_contents("php://input"), true);
+$inputData = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 
 if($method == 'GET'){
+    if(!$_SESSION){
+        echo json_encode(["status" => "error", "message" => "Essa rota é protegida, faça login para acessá-la."]);
+        exit;
+    }
+    
     echo json_encode(Auth::getSession());
 }
 

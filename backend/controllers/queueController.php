@@ -1,7 +1,8 @@
 <?php
 include('../database/connection.php');
-include('../models/User.php');
-include('../models/Queue.php');
+include_once('../models/Auth.php');
+include_once('../models/User.php');
+include_once('../models/Queue.php');
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, DELETE");
@@ -18,6 +19,11 @@ if ($method == 'POST' && isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {
 
 $inputData = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 
+if(!Auth::getSession()){
+    echo json_encode(["status" => "error", "message" => "Essa rota é protegida, faça login para acessá-la."]);
+    exit;
+}
+
 // Definindo a Fila;
 $queue = new Queue();
 
@@ -28,7 +34,7 @@ if($method == 'GET'){
 
         $queue->populateQueueFromDatabase($pdo);
 
-        if($queue->size() > 0){
+        if($queue != null){
             echo json_encode(["status" => "success", "message" => "fila retornada com sucesso.", "queue" => $queue->getQueue()]);
         } else {
             echo json_encode(["status" => "success", "message" => "A fila está vazia."]);
