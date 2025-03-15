@@ -31,7 +31,7 @@ export default {
           if (data.status === 'success' && Array.isArray(data.queue)) {
             this.usuarios = data.queue; // Atualiza a lista de usuários com a fila
             this.isUserFirst = this.usuarios.length > 0 && this.usuarios[0].id+"" == this.userData.id;
-            console.log(this.isUserFirst);
+            //console.log(this.isUserFirst);
           } else {
             console.error('Erro: a fila não é um array ou status não é success', data);
           }

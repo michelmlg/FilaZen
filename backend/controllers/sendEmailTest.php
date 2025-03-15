@@ -1,5 +1,5 @@
 <?php
-include_once('../models/MailTemplate.php');
+include_once('../SMTPMailer.php');
 
 $message = '
 <!DOCTYPE html>
@@ -63,16 +63,21 @@ if ($method == 'POST' && isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {
     $method = $_POST['_method'];
 }
 
-$inputData = json_decode(file_get_contents("php://input"), true);
+$inputData = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 
 if ($method == 'GET') {
     try {
         $receiver = $_GET['receiver'] ?? null;
         
-        $response = MailTemplate::sendEmailGmail(strtolower($receiver), "Contact Test", $message);
+        $response = SMTPMailer::sendEmailZoho(strtolower($receiver), "Contact Test", $message);
 
 
-        echo json_encode(["status" => "sucesso", "message" => "mensagem: " . $response]);
+        echo json_encode([
+            "status" => "sucesso",
+            "message" => $response .
+                " Enviado com sucesso para: " . $receiver
+        ]);
+        
     } catch (Exception $e) {
         echo json_encode(["status" => "error", "message" => "Erro ao processar requisição: " . $e->getMessage()]);
     } finally {
