@@ -1,5 +1,5 @@
 <?php
-include('../database/connection.php');
+include_once('../database/connection.php');
 include_once('../models/User.php');
 include_once('../models/Auth.php');
 include_once('../SMTPMailer.php');
@@ -14,18 +14,18 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 $inputData = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 
-if(!Auth::getSession()){
-    echo json_encode(["status" => "error", "message" => "Essa rota é protegida, faça login para acessá-la."]);
-    exit;
-}
 
 if ($method == 'GET') {
+    if(!Auth::getSession()){
+        echo json_encode(["status" => "error", "message" => "Essa rota é protegida, faça login para acessá-la."]);
+        exit;
+    }
     try {
         $pdo = getConnection();
 
         $users = User::getAllUsers($pdo);
 
-        if($user.count() == 0) {
+        if(count($users) == 0) {
             echo json_encode(["status" => "success", "data" => $users]);
             exit;
         }else{ 
@@ -59,7 +59,13 @@ if ($method == 'POST') {
         
         $id = $user->store($pdo);
 
-        if($id) {
+        // Envia o e-mail de boas vindas.
+        $url_completa ="http://" . $_SERVER['HTTP_HOST'] . "/backend/validate/confirm-email.php";
+        $mailer = new SMTPMailer($email);
+        $mailer->getWelcomeEmailTemplate($url_completa);
+        $mailer->sendEmailZoho();
+
+        if(isset($id)) {
             echo json_encode(["status" => "success", "message" => "Usuário criado com sucesso!", "id" => $id]);
         } else {
             echo json_encode(["status" => "error", "message" => "Erro ao inserir usuário"]);

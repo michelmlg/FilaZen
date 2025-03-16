@@ -1,6 +1,6 @@
 <?php
 include('../database/connection.php');
-include('../models/Order.php');
+include_once('../models/Order.php');
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");

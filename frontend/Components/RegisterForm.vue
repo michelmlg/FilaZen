@@ -77,6 +77,11 @@ export default {
             text: "Você foi registrado com sucesso",
             icon: "success"
           });
+
+          this.newUser.username = "";
+          this.newUser.full_name = "";
+          this.newUser.password = "";
+
           window.location.replace('#/login');
         } else {
           Swal.fire({
@@ -89,10 +94,6 @@ export default {
         console.error("Erro ao registrar usuário:", e);
       }
 
-      // Limpa os campos após envio
-      this.newUser.username = "";
-      this.newUser.full_name = "";
-      this.newUser.password = "";
     },
     togglePasswordVisibility() {
         this.showPassword = !this.showPassword;
