@@ -9,11 +9,21 @@
           <div class="card-body">
             <div class="d-flex justify-content-between">
               <div class="order-info-item" id="orderNumber">
-                <strong>Número do Pedido:</strong> {{ orderData.orderNumber || 'Novo pedido' }}
+                <strong>Número do Pedido:</strong> 
+                <span v-if="newOrder.id">#{{ newOrder.id }}</span>
+                <span v-else class="text-muted">Novo pedido (não salvo)</span>
               </div>
               <div class="order-info-item" id="currentDate">
                 <strong>Data do Pedido:</strong> {{ currentDate }}
               </div>
+            </div>
+            
+            <!-- Loading indicator when creating order -->
+            <div v-if="isLoading" class="mt-3 text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <small class="d-block mt-2 text-muted">Configurando novo pedido...</small>
             </div>
           </div>
         </div>
@@ -21,7 +31,17 @@
     </div>
 
     <form @submit.prevent="saveOrder" class="order-form">
+      <!-- Delivery Date -->
       <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+          <label class="form-label">Delivery Date</label>
+          <input type="date" 
+                v-model="newOrder.delivery_date" 
+                class="form-control shadow-sm" 
+                required>
+        </div>
+        
+        <!-- Status -->
         <div class="col-md-3 mb-3">
           <label class="form-label">Status</label>
           <select class="form-select shadow-sm" v-model="selectedStatus">
@@ -31,6 +51,8 @@
             </option>
           </select>
         </div>
+
+        <!-- Customer -->
         <div class="col-md-3 mb-3">
           <label class="form-label">Cliente</label>
           <select class="form-select shadow-sm" v-model="selectedCustomer">
@@ -39,7 +61,15 @@
               {{ customer.name }}
             </option>
           </select>
+          
+          <!-- Client Info Display -->
+          <div v-if="selectedClient" class="client-info mt-2 p-2 border rounded bg-light">
+            <small class="d-block">CPF: {{ selectedClient.cpf }}</small>
+            <small class="d-block">Email: {{ selectedClient.email }}</small>
+          </div>
         </div>
+
+        <!-- Seller -->
         <div class="col-md-3 mb-3">
           <label class="form-label">Vendedor</label>
           <select class="form-select shadow-sm" v-model="selectedSeller">
@@ -49,6 +79,10 @@
             </option>
           </select>
         </div>
+      </div>
+      
+      <!-- Origin -->
+      <div class="row mb-4">
         <div class="col-md-3 mb-3">
           <label class="form-label">Origem</label>
           <select class="form-select shadow-sm" v-model="selectedOrigin">
@@ -59,7 +93,8 @@
           </select>
         </div>
       </div>
-
+      
+      <!-- Order Details -->
       <div class="card shadow-sm mb-4">
         <div class="card-header bg-light">
           <h5 class="mb-0">Detalhes do Pedido</h5>
@@ -88,6 +123,7 @@
         </div>
       </div>
 
+      <!-- Financial Information -->
       <div class="card shadow-sm mb-4">
         <div class="card-header bg-light">
           <h5 class="mb-0">Informações Financeiras</h5>
@@ -136,6 +172,7 @@
         </div>
       </div>
 
+      <!-- Submit Button -->
       <div class="d-grid gap-2">
         <button type="submit" class="btn btn-primary btn-lg shadow">
           <i class="fas fa-save me-2"></i> Salvar Pedido
@@ -153,6 +190,11 @@ export default {
       selectedCustomer: null,
       selectedSeller: null,
       selectedOrigin: null,
+      selectedClient: null,
+      newOrder: {
+        id: null,
+        delivery_date: '',
+      },
       orderData: {
         status: [],
         customer: [],
@@ -160,15 +202,11 @@ export default {
         origin: [],
         value: 0,
         discount: 0,
-        deliveryDate: "",
         description: "",
         notes: "",
-        orderNumber: "",
-        orderDate: "",
       },
       currentDate: '',
       isLoading: true,
-      saveSuccess: false
     };
   },
   computed: {
@@ -181,15 +219,133 @@ export default {
   async mounted() {
     try {
       this.getCurrentDate();
-      this.orderData.orderDate = this.currentDate;
-      await this.fetchData();
+      await this.fetchData(); // Only fetch data, no order creation
     } catch (error) {
       console.error("Error in mounted:", error);
     } finally {
       this.isLoading = false;
     }
   },
+  watch: {
+    selectedCustomer(newVal) {
+      this.selectedClient = this.orderData.customer.find(c => c.id === newVal);
+    }
+  },
   methods: {
+    async saveOrder() {
+      if (!this.validateForm()) return;
+
+      // Include only necessary fields, exclude the ID
+      const dataToSend = {
+        client_id: this.selectedCustomer,
+        status_id: this.selectedStatus,
+        employee_id: this.selectedSeller,
+        origin_id: this.selectedOrigin,
+        delivery_date: this.newOrder.delivery_date,
+        estimated_value: parseFloat(this.orderData.value) || 0,
+        discount: parseFloat(this.orderData.discount) || 0,
+        description: this.orderData.description || '',
+        notes: this.orderData.notes || ''
+      };
+
+      console.log("Sending data:", dataToSend); // Debug what we're sending
+
+      try {
+        this.isLoading = true;
+        const response = await fetch('/backend/controllers/orderController.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dataToSend)
+        });
+
+        // Get response as text first for debugging
+        const responseText = await response.text();
+        console.log("Response text:", responseText);
+        
+        // Then parse as JSON (if possible)
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          throw new Error("Invalid JSON response: " + responseText);
+        }
+        
+        if (data.status === 'success') {
+          if (data.id) {
+            this.newOrder.id = data.id;
+          }
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Pedido Salvo!',
+            text: `Pedido #${this.newOrder.id} salvo com sucesso!`,
+            confirmButtonColor: '#28a745',
+            timer: 3000
+          });
+          
+          console.log('Order saved successfully:', data);
+        } else {
+          throw new Error(data.message || 'Failed to save order');
+        }
+      } catch (error) {
+        console.error('Error saving order:', error);
+        
+        Swal.fire({
+          icon: 'error',
+          title: 'Erro',
+          text: `Erro ao salvar o pedido: ${error.message}`,
+          confirmButtonColor: '#dc3545'
+        });
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    
+    validateForm() {
+      if (!this.selectedStatus || !this.selectedCustomer || !this.selectedSeller) {
+        // Use SweetAlert for validation
+        Swal.fire({
+          icon: 'warning',
+          title: 'Campos Obrigatórios',
+          text: 'Por favor, preencha todos os campos obrigatórios.',
+          confirmButtonColor: '#ffc107'
+        });
+        return false;
+      }
+      return true;
+    },
+    
+    async fetchData() {
+      try {
+        const [statusResponse, customerResponse, sellerResponse, originResponse] = await Promise.all([
+          fetch('/backend/controllers/orderController.php?getStatus=true'),
+          fetch('/backend/controllers/clientController.php'),
+          fetch('/backend/controllers/userController.php'),
+          fetch('/backend/controllers/orderController.php?getOrigin=true')
+        ]);
+
+        if (!statusResponse.ok || !customerResponse.ok || !sellerResponse.ok || !originResponse.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const [statusData, customerData, sellerData, originData] = await Promise.all([
+          statusResponse.json(),
+          customerResponse.json(),
+          sellerResponse.json(),
+          originResponse.json()
+        ]);
+
+        this.orderData = {
+          ...this.orderData,
+          status: statusData.status_list || [],
+          customer: customerData.clients || [],
+          seller: sellerData.data || [],
+          origin: originData.origin_list || []
+        };
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    },
     getCurrentDate() {
       const today = new Date();
       const year = today.getFullYear();
@@ -198,99 +354,6 @@ export default {
       const hours = String(today.getHours()).padStart(2, '0');
       const minutes = String(today.getMinutes()).padStart(2, '0');
       this.currentDate = `${day}/${month}/${year} ${hours}:${minutes}`;
-    },
-    async saveOrder() {
-      if (!this.validateForm()) {
-        return;
-      }
-      
-      const dataToSend = {
-        ...this.orderData,
-        status_id: this.selectedStatus,
-        client_id: this.selectedCustomer,
-        employee_id: this.selectedSeller,
-        origin_id: this.selectedOrigin,
-        estimated_value: parseFloat(this.orderData.value),
-        discount: parseFloat(this.orderData.discount)
-      };
-
-      try {
-        this.isLoading = true;
-        const response = await fetch('/backend/controllers/orderController.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(dataToSend)
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Order saved successfully:', data);
-        this.saveSuccess = true;
-        // Could add a toast notification here
-        
-      } catch (error) {
-        console.error('Error saving order:', error);
-        // Could add error toast here
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    validateForm() {
-      // Add validation logic here
-      if (!this.selectedStatus || !this.selectedCustomer || !this.selectedSeller) {
-        alert("Por favor, preencha todos os campos obrigatórios.");
-        return false;
-      }
-      return true;
-    },
-    async fetchData() {
-      try {
-        // Fetch status data
-        const statusResponse = await fetch('/backend/controllers/orderController.php?getStatus=true');
-        if (!statusResponse.ok) throw new Error('Failed to fetch status data');
-        
-        // Fetch customer data
-        const customerResponse = await fetch('/backend/controllers/clientController.php');
-        if (!customerResponse.ok) throw new Error('Failed to fetch customer data');
-        
-        // Fetch seller data
-        const sellerResponse = await fetch('/backend/controllers/userController.php');
-        if (!sellerResponse.ok) throw new Error('Failed to fetch seller data');
-        
-        // Fetch origin data
-        const originResponse = await fetch('/backend/controllers/orderController.php?getOrigin=true');
-        if (!originResponse.ok) throw new Error('Failed to fetch origin data');
-        
-        // Extract data from responses
-        const statusData = await statusResponse.json();
-        const customerData = await customerResponse.json();
-        const sellerData = await sellerResponse.json();
-        const originData = await originResponse.json();
-
-        // Assign correctly
-        this.orderData = {
-          ...this.orderData,
-          status: statusData.status_list || [],        // Extract status_list array
-          customer: customerData.clients || [],        // Extract data array from customer response
-          seller: sellerData.data || [],              // Extract data array from seller response
-          origin: originData.origin_list || []        // Extract origin_list array
-        };
-
-        console.log("Data loaded successfully:", {
-          status: this.orderData.status.length,
-          customers: this.orderData.customer.length,
-          sellers: this.orderData.seller.length,
-          origins: this.orderData.origin.length
-        });
-
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
     }
   }
 };
@@ -347,6 +410,16 @@ export default {
   font-weight: 500;
 }
 
+/* Fix for select dropdown text color */
+.form-select {
+  color: #333333 !important; /* Force text color */
+  background-color: #ffffff;
+}
+
+.form-select option {
+  color: #333333; /* Ensure dropdown options are visible */
+}
+
 /* Animation for form changes */
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.5s;
@@ -358,6 +431,15 @@ export default {
 .btn-lg {
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
+}
+
+.client-info {
+  border-left: 3px solid #2f9e44;
+  background-color: #f8f9fa;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #6c757d;
 }
 </style>
 
