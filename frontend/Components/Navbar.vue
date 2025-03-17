@@ -187,7 +187,7 @@ export default {
 
           <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-              <img class="rounded-circle me-2" :src="userData?.img_path" alt="Avatar" style="height: 40px; width: 40px;">
+              <img class="rounded-circle me-2" :src="userData?.img_path ? userData?.img_path : '/public/assets/images/usuario_template.png'" alt="Avatar" style="height: 40px; width: 40px;">
               <span class="username">{{ userData?.username }}</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">

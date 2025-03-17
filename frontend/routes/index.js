@@ -36,6 +36,10 @@ const routes = [
         component: () => loadModule("/frontend/views/Register.vue", options),
     },
     {
+        path: "/confirm-email",
+        component: () => loadModule("/frontend/views/EmailConfirmed.vue", options),
+    },
+    {
         path: "/dashboard",
         component: () => loadModule("/frontend/layouts/SystemLayout.vue", options),
         children: [

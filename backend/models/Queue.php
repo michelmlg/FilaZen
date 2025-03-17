@@ -36,7 +36,13 @@ class Queue {
             $stmt = $pdo->prepare("SELECT u.id as id, u.full_name as full_name, u.img_path as img_path, us.updated_at as updated_at FROM user u JOIN user_status us ON u.id = us.user_id WHERE us.status_id = 3 ORDER BY us.updated_at ASC");
             $stmt->execute();
             $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+            
+            // Verificar se o array está vazio
+            if (empty($users)) {
+                return null;
+            }
+        
+            // Caso haja usuários, processá-los
             foreach ($users as $user) {
                 $this->enqueue($user);
             }
