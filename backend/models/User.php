@@ -64,7 +64,6 @@ class User {
         }
     }
     
-
     public function update($pdo) {
         $sql = "UPDATE user SET 
                     username = :username, 
@@ -91,6 +90,7 @@ class User {
         return $stmt->execute();
     }    
     
+    // Find
     public static function findById($pdo, $id) {
         $sql = "SELECT * FROM user WHERE id = :id";
         $stmt = $pdo->prepare($sql);
@@ -98,7 +98,6 @@ class User {
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-
     public static function findByUsername($pdo, $username) {
         $sql = "SELECT * FROM user WHERE username = :username";
         $stmt = $pdo->prepare($sql);
@@ -113,26 +112,33 @@ class User {
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    
-    public static function delete($pdo, $id) {
-        $sql = "DELETE FROM user WHERE id = :id";
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        return $stmt->execute();
-    }    
 
     public static function getAllUsers($pdo) {
         $sql = "SELECT * FROM user";
         $stmt = $pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    public static function delete($pdo, $id) {
+        $sql = "DELETE FROM user WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }    
+    public static function getUserByToken($pdo, $token) {
+        $stmt = $pdo->prepare("SELECT u.* FROM user u JOIN email_verifications ev ON u.id = ev.user_id WHERE ev.verification_token = :token");
+        $stmt->bindParam(':token', $token);
+        $stmt->execute();
+    
+        return $stmt->fetch(PDO::FETCH_ASSOC); // Retorna os dados do usuário ou `false` se não encontrar
+    }
+    
 
+    // Status
     public static function getAllStatus($pdo){
         $sql = "SELECT * FROM status ORDER BY id ASC";
         $stmt = $pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
     public static function verifyStatus($pdo, $id){
         $sql = "SELECT status_id FROM user_status WHERE user_id = :id";
 
@@ -141,7 +147,6 @@ class User {
 
         return $stmt->fetch(PDO::FETCH_ASSOC); //
     }
-
     public static function changeStatus($pdo, $id, $status_id){
         $sql = "UPDATE user_status SET status_id = :status_id WHERE user_id = :id";
 
@@ -155,6 +160,52 @@ class User {
             return false;
         }
     }
+
+    // Email Verification
+    public static function generateVerificationToken($user_id) {
+        $token = bin2hex(random_bytes(16)); 
+    
+        $expiry_time = date('Y-m-d H:i:s', strtotime('+1 hour'));
+    
+        $pdo = getConnection();  
+        $result = User::storeVerificationToken($pdo, $user_id, $token, $expiry_time);
+    
+        return $result ? $token : false; 
+    }
+    
+    public static function storeVerificationToken($pdo, $user_id, $token, $expiry_time) {
+        $stmt = $pdo->prepare("INSERT INTO email_verifications (user_id, verification_token, token_expiry_at)
+                               VALUES (:user_id, :token, :expiry_time)");
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->bindParam(':token', $token);
+        $stmt->bindParam(':expiry_time', $expiry_time);
+        return $stmt->execute();
+    }
+
+    public static function verifyEmailToken($pdo, $token) {
+        $stmt = $pdo->prepare("SELECT * FROM email_verifications WHERE verification_token = :token AND is_verified = 0 AND token_expiry_at > NOW()");
+        $stmt->bindParam(':token', $token);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC); 
+    }
+
+    
+    public static function confirmEmail($pdo, $token) {
+        try {
+            $stmt = $pdo->prepare("UPDATE email_verifications SET is_verified = 1 WHERE verification_token = :token");
+            $stmt->bindParam(':token', $token);
+            $stmt->execute();
+    
+            $stmt2 = $pdo->prepare("UPDATE user SET email_verificated_at = NOW() WHERE id = (SELECT user_id FROM email_verifications WHERE verification_token = :token)");
+            $stmt2->bindParam(':token', $token);
+            $stmt2->execute();
+    
+            return true;
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+    
     
 }
 ?>

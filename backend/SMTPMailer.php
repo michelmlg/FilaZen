@@ -31,15 +31,12 @@ class SMTPMailer {
             $mail->setFrom(getenv('ZOHO_USER'), 'Filazen'); 
             $mail->addAddress($this->receiver);
 
-
-            // Conteúdo do e-mail
             $mail->isHTML(true); 
             $mail->Subject = $this->subject;
             $mail->Body    = $this->body;
-            $mail->AltBody = strip_tags($this->body); // Versão alternativa em texto puro
-
-            // Enviar e-mail
+            $mail->AltBody = strip_tags($this->body); // Corpo do e-mail em texto puro
             $mail->send();
+
             return true;
         } catch (Exception $e) {
             throw $e;
@@ -56,20 +53,15 @@ class SMTPMailer {
             throw new Exception("Template de e-mail não encontrado.");
         }
 
-         // Decodificar os placeholders armazenados no banco de dados
         $placeholdersDB = json_decode($template['placeholders'], true);
 
-        // Verificar se a quantidade de placeholders no banco é compatível com os placeholders passados
         if (count($placeholdersDB) !== count($placeholders)) {
             throw new Exception("Número de placeholders fornecidos não corresponde ao esperado.");
         }
 
-        // Substituir os placeholders no corpo do e-mail
         $body = $template['body'];
         foreach ($placeholdersDB as $key => $placeholder) {
-            // A chave está sem as chaves extras
             if (isset($placeholders[$key])) {
-                // Substitui o placeholder pelo valor correspondente
                 $body = str_replace("{{" . $placeholder . "}}", $placeholders[$key], $body);
             }
         }
@@ -81,7 +73,7 @@ class SMTPMailer {
     }
 
     
-    public function getWelcomeEmailTemplate($panelUrl) {
+    public function getWelcomeEmailTemplate() {
         // HTML como uma string
         $template = '
         <!DOCTYPE html>
@@ -178,9 +170,6 @@ class SMTPMailer {
                     <p><strong>Estamos muito felizes</strong> por ter você conosco. Explore o <span class="highlight">FilaZen</span> e aproveite todas as funcionalidades que preparamos especialmente para você. 🎉</p>
                     <p><span class="highlight">Vamos começar</span> a sua jornada?</p>
                     <p>Não hesite em entrar em contato caso precise de qualquer ajuda. Estamos aqui para te apoiar!</p>
-                    <div class="text-center">
-                        <a href="{{PANEL_URL}}" class="btn">Acessar Minha Conta</a>
-                    </div>
                 </div>
             </div>
             <div class="footer">
@@ -190,9 +179,7 @@ class SMTPMailer {
         </body>
         </html>';
 
-        // Substitui os placeholders pelos valores passados
         $template = str_replace("{{USERNAME}}", $this->receiver, $template);
-        $template = str_replace("{{PANEL_URL}}", $panelUrl, $template);
         $this->body = $template;
         $this->subject = "Bem-vindo ao FilaZen!";
 
@@ -254,6 +241,11 @@ class SMTPMailer {
                 .highlight {
                     font-weight: bold;
                     font-size: larger;
+                    color: #08545e;
+                }
+                .highlight-bold {
+                    font-weight: bold;
+                    font-size: larger;
                     background: linear-gradient(90deg, #37be81, #08545e);
                     -webkit-background-clip: text;
                     color: transparent;
@@ -303,7 +295,6 @@ class SMTPMailer {
         </body>
         </html>';
 
-        // Substitui os placeholders pelos valores passados
         $template = str_replace("{{USERNAME}}", $this->receiver, $template);
         $template = str_replace("{{CONFIRM_URL}}", $confirmUrl, $template);
         $this->body = $template;

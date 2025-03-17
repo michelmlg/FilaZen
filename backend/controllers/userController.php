@@ -58,11 +58,13 @@ if ($method == 'POST') {
         $user = new User($username, $email, $full_name, $password);
         
         $id = $user->store($pdo);
+        $user_token = User::generateVerificationToken($id);
 
-        // Envia o e-mail de boas vindas.
-        $url_completa ="http://" . $_SERVER['HTTP_HOST'] . "/backend/validate/confirm-email.php";
+        // Envia o e-mail para confirmar a conta.
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+        $url_confirm = $protocol . $_SERVER['HTTP_HOST'] . "/backend/validate/confirm-email.php?token=" . $user_token;
         $mailer = new SMTPMailer($email);
-        $mailer->getWelcomeEmailTemplate($url_completa);
+        $mailer->getConfirmEmailTemplate($url_confirm);
         $mailer->sendEmailZoho();
 
         if(isset($id)) {
@@ -77,10 +79,6 @@ if ($method == 'POST') {
     }
     exit;
 }
-
-
-
-
 
 
 ?>

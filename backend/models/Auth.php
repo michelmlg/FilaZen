@@ -12,6 +12,10 @@ class Auth {
         
         $user = User::findByUsername($pdo, $username);
 
+        if($user['email_verificated_at'] == null){
+            return false;
+        }
+
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_session'] = [
                 'id' => $user['id'],
@@ -29,6 +33,11 @@ class Auth {
     public static function loginWithEmail($pdo, $email, $password) {
         
         $user = User::findByEmail($pdo, $email);
+
+        if($user['email_verificated_at'] == null){
+            return false;
+        }
+
 
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_session'] = [

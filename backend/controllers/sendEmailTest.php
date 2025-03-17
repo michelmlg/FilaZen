@@ -24,10 +24,7 @@ if ($method == 'GET') {
             throw new Exception("O e-mail do destinatário é obrigatório.");
         }
 
-        // $pdo = getConnection();
-
         $mailer = new SMTPMailer($receiver);
-        // $mailer->getEmailTemplate($pdo, "welcome", ["USERNAME" => $receiver, "PANEL_URL" => "http://localhost"]);
         $mailer->getWelcomeEmailTemplate("http://localhost");
         $mailer->sendEmailZoho();
 
