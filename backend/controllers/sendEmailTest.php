@@ -1,55 +1,6 @@
 <?php
+include('../database/connection.php');
 include_once('../SMTPMailer.php');
-
-$message = '
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            padding: 20px;
-        }
-        .container {
-            max-width: 600px;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        h2 {
-            color: #333;
-        }
-        p {
-            color: #555;
-            font-size: 16px;
-        }
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            color: white;
-            background: #007BFF;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Olá, Usuário!</h2>
-        <p>Este é um e-mail de teste com formatação HTML.</p>
-        <p>Clique no botão abaixo para acessar nosso site:</p>
-        <a href="https://www.exemplo.com" class="button">Acessar Site</a>
-    </div>
-</body>
-</html>';
-
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
@@ -68,14 +19,18 @@ $inputData = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 if ($method == 'GET') {
     try {
         $receiver = $_GET['receiver'] ?? null;
-        
-        $response = SMTPMailer::sendEmailZoho(strtolower($receiver), "Contact Test", $message);
 
+        if (!$receiver) {
+            throw new Exception("O e-mail do destinatário é obrigatório.");
+        }
+
+        $mailer = new SMTPMailer($receiver);
+        $mailer->getWelcomeEmailTemplate("http://localhost");
+        $mailer->sendEmailZoho();
 
         echo json_encode([
             "status" => "sucesso",
-            "message" => $response .
-                " Enviado com sucesso para: " . $receiver
+            "message" => "E-mail enviado com sucesso para: " . $receiver
         ]);
         
     } catch (Exception $e) {
@@ -85,8 +40,6 @@ if ($method == 'GET') {
     }
     exit;
 }
-
-
 
 /*
 $to = "destinatario@example.com";

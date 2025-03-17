@@ -1,5 +1,5 @@
 <?php
-include('User.php');
+include_once('User.php');
 
 session_start();
 
@@ -11,6 +11,10 @@ class Auth {
     public static function loginWithUsername($pdo, $username, $password) {
         
         $user = User::findByUsername($pdo, $username);
+
+        if($user['email_verificated_at'] == null){
+            return false;
+        }
 
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_session'] = [
@@ -29,6 +33,11 @@ class Auth {
     public static function loginWithEmail($pdo, $email, $password) {
         
         $user = User::findByEmail($pdo, $email);
+
+        if($user['email_verificated_at'] == null){
+            return false;
+        }
+
 
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_session'] = [
