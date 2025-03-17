@@ -30,42 +30,66 @@ class Order {
 
     public function store($pdo) {
         try {
-            
             $pdo->beginTransaction();
-    
-            $sql = "INSERT INTO orders (status_id, client_id, employee_id, description, 
-                    estimated_value, discount, expected_delivery_date, notes, origin_id, 
-                    created_at, updated_at) 
-                    VALUES (:status_id, :client_id, :employee_id, :description, 
-                    :estimated_value, :discount, :expected_delivery_date, :notes, :origin_id, 
-                    :created_at, :updated_at)";
-    
+            $sql = "INSERT INTO orders (
+                status_id, 
+                client_id, 
+                employee_id, 
+                description, 
+                origin_id, 
+                estimated_value, 
+                discount, 
+                expected_delivery_date, 
+                notes, 
+                created_at, 
+                updated_at
+            ) VALUES (
+                :status_id,
+                :client_id,
+                :employee_id,
+                :description,
+                :origin_id,
+                :estimated_value,
+                :discount,
+                :expected_delivery_date,
+                :notes,
+                NOW(),
+                NOW()
+            )";
+
             $stmt = $pdo->prepare($sql);
-            
-            $stmt->bindParam(':status_id', $this->status_id);
-            $stmt->bindParam(':client_id', $this->client_id);
-            $stmt->bindParam(':employee_id', $this->employee_id);
-            $stmt->bindParam(':description', $this->description);
-            $stmt->bindParam(':estimated_value', $this->estimated_value);
-            $stmt->bindParam(':discount', $this->discount);
-            $stmt->bindParam(':expected_delivery_date', $this->expected_delivery_date);
-            $stmt->bindParam(':notes', $this->notes);
-            $stmt->bindParam(':origin_id', $this->origin_id);
-            $stmt->bindParam(':created_at', $this->created_at);
-            $stmt->bindParam(':updated_at', $this->updated_at);
-    
-            $stmt->execute();
+            $stmt->execute([
+                ':status_id' => $this->status_id,
+                ':client_id' => $this->client_id,
+                ':employee_id' => $this->employee_id,
+                ':description' => $this->description,
+                ':origin_id' => $this->origin_id,
+                ':estimated_value' => $this->estimated_value,
+                ':discount' => $this->discount,
+                ':expected_delivery_date' => $this->expected_delivery_date,
+                ':notes' => $this->notes
+            ]);
+
             $orderId = $pdo->lastInsertId();
-    
-            
             $pdo->commit();
-    
             return $orderId;
+
         } catch (PDOException $e) {
-            
             $pdo->rollBack();
-            return false;
+            throw new Exception("Database error: " . $e->getMessage());
         }
+    }
+
+    public static function getAllOrderStatuses($pdo) {
+        $sql = "SELECT * FROM order_status ORDER BY id ASC";
+        $stmt = $pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function getAllOrderOrigins($pdo) {
+        $sql = "SELECT * FROM order_origin ORDER BY id ASC";
+        $stmt = $pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function update($pdo) {
@@ -140,18 +164,6 @@ class Order {
 
     public static function getAllOrders($pdo) {
         $sql = "SELECT * FROM orders";
-        $stmt = $pdo->query($sql);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public static function getAllOrderStatuses($pdo) {
-        $sql = "SELECT * FROM order_status ORDER BY id ASC";
-        $stmt = $pdo->query($sql);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public static function getAllOrderOrigins($pdo) {
-        $sql = "SELECT * FROM order_origin ORDER BY id ASC";
         $stmt = $pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
