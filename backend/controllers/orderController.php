@@ -1,5 +1,6 @@
 <?php
 include('../database/connection.php');
+include_once('../models/Auth.php');
 include_once('../models/Order.php');
 
 header("Access-Control-Allow-Origin: *");
@@ -16,7 +17,7 @@ if ($method == 'POST' && isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {
 
 $inputData = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 
-if(!$_SESSION){
+if(!Auth::getSession()){
     echo json_encode(["status" => "error", "message" => "Essa rota é protegida, faça login para acessá-la."]);
     exit;
 }

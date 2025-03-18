@@ -25,7 +25,7 @@ if ($method == 'GET') {
 
         $users = User::getAllUsers($pdo);
 
-        if(count($users) == 0) {
+        if(count($users) != 0) {
             echo json_encode(["status" => "success", "data" => $users]);
             exit;
         }else{ 
