@@ -9,9 +9,16 @@ export default {
         compraram: 19,
         conversao: 54
       },
+      startIndex: 0,
       isUserFirst: false,
-      userData: null
+      userData: null,
+      pedidos: []
     };
+  },
+  computed: {
+    usuariosPaginados() {
+      return this.usuarios.slice(this.startIndex, this.startIndex + 5);
+    }
   },
   methods: {
     verificarFila() {
@@ -20,6 +27,17 @@ export default {
       setInterval(() => {
         this.obterFila();
       }, 5000); // Altera a cada 3 segundos
+    },
+
+    descerUsuario() {
+      if (this.startIndex < this.usuarios.length - 5) {
+        this.startIndex++;
+      }
+    },
+    subirUsuario() {
+      if (this.startIndex > 0) {
+        this.startIndex--;
+      }
     },
 
     async obterFila() {
@@ -78,19 +96,29 @@ export default {
 
 <template>
   <section class="fila-container ms-2 me-2 d-flex justify-content-between">
-    <div class="w-70">
+    <div class="w-70 ms-4">
       <h2 class="mb-2">A vez é de</h2>
       <transition-group name="fila" tag="div">
-        <div v-for="(usuario, index) in usuarios" :key="usuario.id" 
+        <div v-for="(usuario, index) in usuariosPaginados" :key="usuario.full_name" 
              class="usuario" 
              :class="[{ 'destaque': index === 0 }, 'mb-4']">
           <img :src="usuario.img_path || '../../public/assets/images/usuario_template.png'" class="rounded-circle" alt="Usuário">
           <span>{{ usuario.full_name }}</span>
         </div>
       </transition-group>
+      <div class="d-flex justify-content-center position-absolute bottom-0 start-50 translate-middle-x mb-2">
+          <button class="btn btn-outline-secondary btn-sm me-2" @click="descerUsuario">
+            <i class="fa-solid fa-arrow-down"></i>
+          </button>
+          <button class="btn btn-outline-secondary btn-sm ms-2" @click="subirUsuario">
+            <i class="fa-solid fa-arrow-up"></i>
+          </button>
+        </div>
     </div>
-    <div class="w-30">
-      <div class="d-flex flex-column align-items-center">
+  </section>
+    <div class="ms-auto d-flex flex-column">
+      <section class="info-section mt-5 pt-5 pb-5 pe-5 me-5 d-flex flex-column">
+      <div class="d-flex flex-column align-items-center text-center">
           <i v-if="!isUserFirst" class="fa-solid fa-lock"></i>
           <button
             v-if="isUserFirst" 
@@ -106,8 +134,8 @@ export default {
           </button>
       </div>
 
-      <div class="info-venda">
-        <table class="table table-striped">
+      <div class="info-venda mt-2 text-center">
+        <table class="table table-striped table-sm text-center">
           <tr>
             <td class="text-start">Clientes:</td>
             <td class="text-end">{{ infoVenda.clientes }}</td>
@@ -122,11 +150,37 @@ export default {
           </tr>
         </table>
       </div>
-    </div>
-  </section>
+      </section>
+      <section class="meus-pedidos mt-5 pb-5 me-5 pe-5 d-flex flex-column align-items-end">
+        <h3 class="text-center flex-grow-1 me-3">Meus pedidos</h3>
+        <table class="table table-meus-pedidos">
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>Cliente</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="pedido in pedidos" :key="pedido.ticket">
+              <td>{{ pedido.ticket }}</td>
+              <td>{{ pedido.cliente }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      </div>
 </template>
 
 <style scoped>
+  :root {
+    --textVue: #08545e;
+    --backgroundVue: #d3dede;
+    --primaryVue: #37be81;
+    --primaryVueD:#237550;
+    --secondaryVue: #1bb2d0;
+    --secondaryVueD: #107185;
+    --accentVue: #7270db;
+  }
 /* Estilização básica */
 .fila-container {
   padding: 20px;
@@ -166,6 +220,9 @@ export default {
 }
 .destaque span{
   font-size: 3rem;
+   background: linear-gradient(135deg, var(--secondaryVue), var(--primaryVue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Animação da fila subindo */
@@ -180,6 +237,11 @@ export default {
 
 .fila-leave-active {
   position: absolute;
+}
+
+.table-meus-pedidos{
+  border: 3px solid;
+  border-color: aqua;
 }
 
 .btn-big-padding{
