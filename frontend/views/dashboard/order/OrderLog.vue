@@ -93,7 +93,7 @@
             <div class="card-header bg-light">
                 <h5 class="mb-0">Interações do pedido</h5>
             </div>
-            <div class="card-body bg-secondary rounded-bottom"  style="min-height: 60vh;">
+            <div class="card-body bg-secondary rounded-bottom overflow-auto"  style="min-height: 60vh; max-height: 80vh;">
 
                 <div class="d-flex flex-column align-items-end mb-3">
                     <!-- Ajustando para alinhamento à esquerda e fixação no topo -->
@@ -111,6 +111,7 @@
                         A simple secondary alert—check it out!
                     </div>
                 </div>
+                
             </div>
         </div>
 
