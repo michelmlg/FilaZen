@@ -15,6 +15,7 @@ if ($method == 'POST' && isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {
     $method = $_POST['_method'];
 }
 
+
 $inputData = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 
 if(!Auth::getSession()){
@@ -108,7 +109,7 @@ if ($method == 'GET') {
                 "status_list" => $status_list
             ]);
         }
-        // Fetch all order origins
+        
         else if (isset($_GET['getOrigin']) && $_GET['getOrigin'] === 'true') {
             $origin_list = Order::getAllOrderOrigins($pdo);
             echo json_encode([
@@ -128,7 +129,6 @@ if ($method == 'GET') {
             }
         }
 
-        // Default: fetch all orders
         else {
             $orders = Order::getAllOrders($pdo);
             echo json_encode(["status" => "success", "data" => $orders]);
@@ -143,41 +143,63 @@ if ($method == 'GET') {
 
 if ($method == 'POST') {
     try {
-        $inputData = json_decode(file_get_contents("php://input"), true);
         $pdo = getConnection();
 
-        // Validate required fields
-        $required = ['client_id', 'status_id', 'employee_id'];
-        foreach ($required as $field) {
-            if (!isset($inputData[$field])) {
-                throw new Exception("Missing required field: $field");
+        if(isset($inputData['setInteraction']) && $inputData['setInteraction'] === "true"){
+
+            $order_id = $inputData['order_id'];
+            $type = $inputData['type'];
+            $body = $inputData['body'];
+            $session = Auth::getSession();
+     
+            $interaction_id = Order::addInteraction($pdo, $order_id, $type, $body, $session['user_session']['id']);
+
+            if(isset($interaction_id)){
+                echo json_encode(["status" => "success", "message" => "Interaction added successfully!", "interaction_id" => $interaction_id]);
+            }else{
+                echo json_encode(["status" => "error", "message" => "An error occurred while adding a new interaction to the order."]);
+            }
+
+            exit;
+
+        }else{
+
+            // Validate required fields
+            $required = ['client_id', 'status_id', 'employee_id'];
+            foreach ($required as $field) {
+                if (!isset($inputData[$field])) {
+                    throw new Exception("Missing required field: $field");
+                }
+            }
+    
+            // Create new order
+            $order = new Order(
+                $inputData['status_id'],
+                $inputData['client_id'],
+                $inputData['employee_id'],
+                $inputData['description'] ?? '',
+                $inputData['origin_id'] ?? 1,
+                $inputData['estimated_value'] ?? 0,
+                $inputData['discount'] ?? 0,
+                $inputData['delivery_date'] ?? null,
+                $inputData['notes'] ?? null
+            );
+    
+            $orderId = $order->store($pdo);
+    
+            if ($orderId) {
+                echo json_encode([
+                    "status" => "success",
+                    "id" => $orderId,
+                    "message" => "Order created successfully"
+                ]);
+            } else {
+                throw new Exception("Failed to create order");
             }
         }
 
-        // Create new order
-        $order = new Order(
-            $inputData['status_id'],
-            $inputData['client_id'],
-            $inputData['employee_id'],
-            $inputData['description'] ?? '',
-            $inputData['origin_id'] ?? 1,
-            $inputData['estimated_value'] ?? 0,
-            $inputData['discount'] ?? 0,
-            $inputData['delivery_date'] ?? null,
-            $inputData['notes'] ?? null
-        );
+        
 
-        $orderId = $order->store($pdo);
-
-        if ($orderId) {
-            echo json_encode([
-                "status" => "success",
-                "id" => $orderId,
-                "message" => "Order created successfully"
-            ]);
-        } else {
-            throw new Exception("Failed to create order");
-        }
     } catch (Exception $e) {
         echo json_encode([
             "status" => "error",

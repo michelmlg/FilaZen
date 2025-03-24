@@ -22,7 +22,7 @@
             <h5 class="mb-0">Classificação do Pedido</h5>
         </div>
         <div class="card-body p-3 rounded-bottom">
-            <form @submit.prevent="saveOrder" class="order-form">
+            <form class="order-form">
                 <!-- Delivery Date -->
                 <div class="row mb-4">
                     <!-- Status -->
@@ -279,95 +279,22 @@
       }
     },
     methods: {
-        async saveOrder() {
-            if (!this.validateForm()) return;
-    
-            // Include only necessary fields, exclude the ID
-            const dataToSend = {
-            client_id: this.selectedCustomer,
-            status_id: this.selectedStatus,
-            employee_id: this.selectedSeller,
-            origin_id: this.selectedOrigin,
-            delivery_date: this.newOrder.delivery_date,
-            estimated_value: parseFloat(this.orderData.value) || 0,
-            discount: parseFloat(this.orderData.discount) || 0,
-            description: this.orderData.description || '',
-            notes: this.orderData.notes || ''
-            };
-    
-            console.log("Sending data:", dataToSend); // Debug what we're sending
-    
-            try {
-            this.isLoading = true;
-            const response = await fetch('/backend/controllers/orderController.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dataToSend)
-            });
-    
-            // Get response as text first for debugging
-            const responseText = await response.text();
-            console.log("Response text:", responseText);
-            
-            // Then parse as JSON (if possible)
-            let data;
-            try {
-                data = JSON.parse(responseText);
-            } catch (e) {
-                throw new Error("Invalid JSON response: " + responseText);
-            }
-            
-            if (data.status === 'success') {
-                if (data.id) {
-                this.newOrder.id = data.id;
-                }
-                
-                Swal.fire({
-                icon: 'success',
-                title: 'Pedido Salvo!',
-                text: `Pedido #${this.newOrder.id} salvo com sucesso!`,
-                confirmButtonColor: '#28a745',
-                timer: 3000
-                });
-                
-                console.log('Order saved successfully:', data);
-            } else {
-                throw new Error(data.message || 'Failed to save order');
-            }
-            } catch (error) {
-            console.error('Error saving order:', error);
-            
-            Swal.fire({
-                icon: 'error',
-                title: 'Erro',
-                text: `Erro ao salvar o pedido: ${error.message}`,
-                confirmButtonColor: '#dc3545'
-            });
-            } finally {
-            this.isLoading = false;
-            }
-        },
-        validateForm() {
-        if (!this.selectedStatus || !this.selectedCustomer || !this.selectedSeller) {
-            // Use SweetAlert for validation
-            Swal.fire({
-            icon: 'warning',
-            title: 'Campos Obrigatórios',
-            text: 'Por favor, preencha todos os campos obrigatórios.',
-            confirmButtonColor: '#ffc107'
-            });
-            return false;
-        }
-        return true;
-        },
-        
         async fetchData() {
             try {
-                const [statusResponse, customerResponse, sellerResponse, originResponse] = await Promise.all([
+                const [statusResponse, customerResponse, sellerResponse, originResponse, orderInteractions] = await Promise.all([
                 fetch('/backend/controllers/orderController.php?getStatus=true'),
                 fetch('/backend/controllers/clientController.php'),
                 fetch('/backend/controllers/userController.php'),
-                fetch('/backend/controllers/orderController.php?getOrigin=true')
+                fetch('/backend/controllers/orderController.php?getOrigin=true'),
+                fetch('/backend/controllers/orderController.php?getInteractions=true', {
+                  method: 'GET',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ // Converte um objeto para JSON
+                      order_id: this.$route.params.id,
+                  })
+                }),
                 ]);
 
                 if (!statusResponse.ok || !customerResponse.ok || !sellerResponse.ok || !originResponse.ok) {
