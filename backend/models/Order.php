@@ -6,15 +6,25 @@ class Order {
     private $client_id;
     private $employee_id;
     private $description;
+    private $origin_id;
     private $estimated_value;
     private $discount;
-    private $created_at;
-    private $expected_delivery_date;
+    private $delivery_date;
     private $notes;
-    private $origin_id;
+    private $created_at;
     private $updated_at;
 
-    public function __construct($status_id, $client_id, $employee_id, $description, $origin_id, $estimated_value = 0.00, $discount = 0.00, $expected_delivery_date = null, $notes = null) {
+    public function __construct(
+        $status_id,
+        $client_id,
+        $employee_id,
+        $description,
+        $origin_id,
+        $estimated_value,
+        $discount,
+        $delivery_date,
+        $notes
+    ) {
         $this->status_id = $status_id;
         $this->client_id = $client_id;
         $this->employee_id = $employee_id;
@@ -22,74 +32,79 @@ class Order {
         $this->origin_id = $origin_id;
         $this->estimated_value = $estimated_value;
         $this->discount = $discount;
-        $this->expected_delivery_date = $expected_delivery_date;
+        $this->delivery_date = $delivery_date;
         $this->notes = $notes;
         $this->created_at = date("Y-m-d H:i:s");
         $this->updated_at = date("Y-m-d H:i:s");
     }
 
+    public static function getOrderById($pdo, $id) {
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ?");
+            $stmt->execute([$id]);
+            $order = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $order;
+        } catch (Exception $e) {
+            error_log("Error fetching order by ID: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function store($pdo) {
         try {
-            $pdo->beginTransaction();
-            $sql = "INSERT INTO orders (
-                status_id, 
-                client_id, 
-                employee_id, 
-                description, 
-                origin_id, 
-                estimated_value, 
-                discount, 
-                expected_delivery_date, 
-                notes, 
-                created_at, 
-                updated_at
-            ) VALUES (
-                :status_id,
-                :client_id,
-                :employee_id,
-                :description,
-                :origin_id,
-                :estimated_value,
-                :discount,
-                :expected_delivery_date,
-                :notes,
-                NOW(),
-                NOW()
-            )";
+            $stmt = $pdo->prepare("
+                INSERT INTO orders (status_id, client_id, employee_id, description, origin_id, estimated_value, discount, delivery_date, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            ");
 
-            $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                ':status_id' => $this->status_id,
-                ':client_id' => $this->client_id,
-                ':employee_id' => $this->employee_id,
-                ':description' => $this->description,
-                ':origin_id' => $this->origin_id,
-                ':estimated_value' => $this->estimated_value,
-                ':discount' => $this->discount,
-                ':expected_delivery_date' => $this->expected_delivery_date,
-                ':notes' => $this->notes
+                $this->status_id,
+                $this->client_id,
+                $this->employee_id,
+                $this->description,
+                $this->origin_id,
+                $this->estimated_value,
+                $this->discount,
+                $this->delivery_date,
+                $this->notes
             ]);
 
-            $orderId = $pdo->lastInsertId();
-            $pdo->commit();
-            return $orderId;
+            return $pdo->lastInsertId();
+        } catch (Exception $e) {
+            error_log("Error storing order: " . $e->getMessage());
+            return false;
+        }
+    }
 
-        } catch (PDOException $e) {
-            $pdo->rollBack();
-            throw new Exception("Database error: " . $e->getMessage());
+    public static function getAllOrders($pdo) {
+        try {
+            $stmt = $pdo->query("SELECT * FROM orders");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error getting all orders: " . $e->getMessage());
+            return [];
         }
     }
 
     public static function getAllOrderStatuses($pdo) {
-        $sql = "SELECT * FROM order_status ORDER BY id ASC";
-        $stmt = $pdo->query($sql);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $pdo->query("SELECT * FROM order_status");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error getting all order statuses: " . $e->getMessage());
+            return [];
+        }
     }
 
     public static function getAllOrderOrigins($pdo) {
-        $sql = "SELECT * FROM order_origin ORDER BY id ASC";
-        $stmt = $pdo->query($sql);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $pdo->query("SELECT * FROM order_origin");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error getting all order origins: " . $e->getMessage());
+            return [];
+        }
     }
 
     public function update($pdo) {
@@ -100,7 +115,7 @@ class Order {
                     description = :description,
                     estimated_value = :estimated_value,
                     discount = :discount,
-                    expected_delivery_date = :expected_delivery_date,
+                    delivery_date = :delivery_date,
                     notes = :notes,
                     origin_id = :origin_id,
                     updated_at = NOW()
@@ -115,7 +130,7 @@ class Order {
         $stmt->bindParam(':description', $this->description);
         $stmt->bindParam(':estimated_value', $this->estimated_value);
         $stmt->bindParam(':discount', $this->discount);
-        $stmt->bindParam(':expected_delivery_date', $this->expected_delivery_date);
+        $stmt->bindParam(':delivery_date', $this->delivery_date);
         $stmt->bindParam(':notes', $this->notes);
         $stmt->bindParam(':origin_id', $this->origin_id);
     
@@ -159,12 +174,6 @@ class Order {
         $searchTerm = "%{$description}%";
         $stmt->bindParam(':description', $searchTerm, PDO::PARAM_STR);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public static function getAllOrders($pdo) {
-        $sql = "SELECT * FROM orders";
-        $stmt = $pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

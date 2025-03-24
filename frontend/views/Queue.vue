@@ -42,9 +42,23 @@ export default {
         console.error('Erro ao fazer requisição:', error);
       }
     },
-    redirecionarParaPedido() {
+    async redirecionarParaPedido() {
       if (this.isUserFirst) {
-        this.$router.push('/dashboard/register-order');
+        const response = await fetch("/backend/controllers/orderController.php?action=open_order", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "include"
+        });
+
+        const data = await response.json(); // Parse the JSON response
+        if (data.status === 'success' && data.id) {
+          this.$router.push("/dashboard/register-order?id=" + data.id);
+        } else {
+          console.error("Failed to get order ID:", data);
+          alert("Failed to open order. Please try again.");
+        }
       }
     },
     async checkAuth() {

@@ -30,13 +30,14 @@ if ($method == 'GET') {
         // Handle different GET actions
         if (isset($_GET['action'])) {
             // Reserve an order ID action
-            if ($_GET['action'] === 'reserve_id') {
+            if ($_GET['action'] === 'open_order') {
                 try {
                     // Start a transaction
                     $pdo->beginTransaction();
                     
                     // Insert a placeholder row to reserve an ID
-                    $stmt = $pdo->prepare("INSERT INTO orders (status_id) VALUES (0)");
+                    $stmt = $pdo->prepare("INSERT INTO orders (status_id, client_id, employee_id, description, estimated_value, discount, expected_delivery_date, notes, origin_id, created_at, updated_at)
+                    VALUES (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NOW(), NOW())");
                     $stmt->execute();
                     
                     // Get the last inserted ID
@@ -99,14 +100,31 @@ if ($method == 'GET') {
                 }
             }
         }
-        
+        // Fetch a specific order by ID
+        else if (isset($_GET['id'])) {
+            $orderId = $_GET['id'];
+            $order = Order::getOrderById($pdo, $orderId);
+            if ($order) {
+                echo json_encode([
+                    "status" => "success",
+                    "order" => $order
+                ]);
+            } else {
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Order not found"
+                ]);
+            }
+            exit;
+        }
         // Fetch all order statuses
-        else if (isset($_GET['getStatus']) && $_GET['getStatus'] === 'true') {
-            $status_list = Order::getAllOrderStatuses($pdo);
-            echo json_encode([
-                "status" => "success", 
-                "status_list" => $status_list
-            ]);
+        else if (isset($_GET['getStatus']) && $_GET['getStatus'] === 'true') {      
+                $status_list = Order::getAllOrderStatuses($pdo);
+                echo json_encode([
+                    "status" => "success", 
+                    "status_list" => $status_list
+                    
+                ]);
         }
         // Fetch all order origins
         else if (isset($_GET['getOrigin']) && $_GET['getOrigin'] === 'true') {
@@ -135,14 +153,17 @@ if ($method == 'POST') {
         $pdo = getConnection();
 
         // Validate required fields
-        $required = ['client_id', 'status_id', 'employee_id'];
+        $required = ['id', 'client_id', 'status_id', 'employee_id']; // Include 'id' as required
         foreach ($required as $field) {
             if (!isset($inputData[$field])) {
                 throw new Exception("Missing required field: $field");
             }
         }
 
-        // Create new order
+        // Get the order ID from the input data
+        $orderId = $inputData['id'];
+
+        // Update the order
         $order = new Order(
             $inputData['status_id'],
             $inputData['client_id'],
@@ -155,16 +176,16 @@ if ($method == 'POST') {
             $inputData['notes'] ?? null
         );
 
-        $orderId = $order->store($pdo);
+        $updated = $order->update($pdo, $orderId); // Call the update method
 
-        if ($orderId) {
+        if ($updated) {
             echo json_encode([
                 "status" => "success",
                 "id" => $orderId,
-                "message" => "Order created successfully"
+                "message" => "Order updated successfully"
             ]);
         } else {
-            throw new Exception("Failed to create order");
+            throw new Exception("Failed to update order");
         }
     } catch (Exception $e) {
         echo json_encode([
