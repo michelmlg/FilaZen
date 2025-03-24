@@ -115,7 +115,19 @@ if ($method == 'GET') {
                 "status" => "success", 
                 "origin_list" => $origin_list
             ]);
+        } 
+
+        else if (isset($_GET['getInteractions']) && $_GET['getInteractions'] === 'true') {
+            $order_id = $inputData['order_id'];
+            $interactions = Order::getInteractions($pdo, $order_id);
+
+            if(count($interactions) > 0){
+                echo json_encode(["status" => "success", "interactions" => $interactions]);
+            }else{
+                echo json_encode(["status" => "success", "interactions" => "Esse pedido não possui interações!", "empty_list" => true]);
+            }
         }
+
         // Default: fetch all orders
         else {
             $orders = Order::getAllOrders($pdo);

@@ -52,6 +52,10 @@ const routes = [
                 component: () => loadModule("/frontend/views/Orders.vue", options),
             },
             {
+                path: 'order/:id', 
+                component: () => loadModule("/frontend/views/dashboard/order/OrderLog.vue", options),
+            },
+            {
                 path: 'clients', 
                 component: () => loadModule("/frontend/views/Clients.vue", options),
             },

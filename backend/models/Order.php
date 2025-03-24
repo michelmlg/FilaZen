@@ -167,6 +167,34 @@ class Order {
         $stmt = $pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    // Interactions:
+
+    public static function getInteractions($pdo, $id) {
+        $sql = "SELECT order_id, created_at, created_by, type, body FROM order_interactions WHERE order_id = :order_id ORDER BY created_at ASC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':order_id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    public function addInteraction($pdo, $id, $type, $body, $created_by) {
+        try {
+            $sql = "INSERT INTO order_interactions (order_id, type, body, created_by, created_at) 
+                    VALUES (:order_id, :type, :body, :created_by, NOW())";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':order_id' => $id,
+                ':type' => $type,
+                ':body' => $body,
+                ':created_by' => $created_by
+            ]);
+            return $pdo->lastInsertId();
+        } catch (PDOException $e) {
+            throw new Exception("Database error: " . $e->getMessage());
+        }
+    }
+    
 }
 
 ?>
