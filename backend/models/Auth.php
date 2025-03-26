@@ -25,6 +25,8 @@ class Auth {
                 'role' => $user['role'],
                 'img_path' => $user['img_path']
             ];
+
+            $_SESSION['authenticated'] = true;
             return true;
         }
 
@@ -48,6 +50,9 @@ class Auth {
                 'role' => $user['role'],
                 'img_path' => $user['img_path']
             ];
+
+            $_SESSION['authenticated'] = true;
+
             return true;
         }
 
@@ -60,11 +65,11 @@ class Auth {
     }
 
     public static function check() {
-        return isset($_SESSION['user']);
+        return isset($_SESSION['authenticated']);
     }
 
     public static function user() {
-        return self::check() ? $_SESSION['user'] : null;
+        return self::check() ? $_SESSION['user_session'] : null;
     }
 }
 ?>

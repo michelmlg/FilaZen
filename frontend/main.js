@@ -1,8 +1,29 @@
 const { createApp, defineAsyncComponent } = Vue;
 const { loadModule } = window['vue3-sfc-loader'];
 
-// NAO ALTERE NADA DESSE ARQUIVO
+// Função para verificar a autenticação
+async function checkAuth() {
+  try {
+    const response = await fetch("/backend/controllers/authController.php", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include"
+    });
 
+    if (!response.ok) throw new Error("Erro ao verificar autenticação");
+
+    const data = await response.json();
+    console.log(data);
+    return data.authenticated !== false ? data.user_session : null;
+  } catch (error) {
+    console.error("Erro na verificação de autenticação:", error);
+    return null;
+  }
+}
+
+// NAO ALTERE NADA DESSE ARQUIVO
 const options = {
     moduleCache: {
         vue: Vue
@@ -28,6 +49,24 @@ import('./routes/index.js').then(({ default: router }) => {
 
     const app = createApp(App);
     app.use(router);
+
+    app.config.globalProperties.$session = null;
+
+    
+
+    // Adiciona um beforeEach para verificar a sessão antes de cada navegação
+    router.beforeEach(async (to, from, next) => {
+        const session = await checkAuth();
+        app.config.globalProperties.$session = session;
+
+        if (!session && to.meta.requiresAuth) {
+        next('/');
+        } else {
+        next();
+        }
+    });
+
+    // Após a inicialização do app, montar no DOM
     app.mount("#app");
 
 }).catch(err => console.error("Erro ao carregar roteador:", err));

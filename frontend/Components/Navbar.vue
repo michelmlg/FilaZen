@@ -4,7 +4,7 @@ export default {
   data() {
     return {
       isAuthenticated: false,
-      userData: null,
+      userData: this.$session,
       isMenuOpen: false,
       statusOptions: [],
       userStatus: null,
@@ -17,28 +17,28 @@ export default {
     };
   },
   methods: {
-    async checkAuth() {
-      try {
-        const response = await fetch("/backend/controllers/authController.php", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          credentials: "include"
-        });
+    // async checkAuth() {
+    //   try {
+    //     const response = await fetch("/backend/controllers/authController.php", {
+    //       method: "GET",
+    //       headers: {
+    //         "Content-Type": "application/json"
+    //       },
+    //       credentials: "include"
+    //     });
 
-        if (!response.ok) throw new Error("Erro ao verificar autenticação");
+    //     if (!response.ok) throw new Error("Erro ao verificar autenticação");
 
-        const data = await response.json();
-        console.log(data);
-        if (data.user_session) {
-          this.isAuthenticated = true;
-          this.userData = data.user_session;
-        }
-      } catch (error) {
-        console.error("Erro na verificação de autenticação:", error);
-      }
-    },
+    //     const data = await response.json();
+    //     console.log(data);
+    //     if (data.user_session) {
+    //       this.isAuthenticated = true;
+    //       this.userData = data.user_session;
+    //     }
+    //   } catch (error) {
+    //     console.error("Erro na verificação de autenticação:", error);
+    //   }
+    // },
     async getUserStatus() {
 
       try {
@@ -151,10 +151,14 @@ export default {
     }
   },
   async mounted() {
-    await this.checkAuth();
+    // await this.checkAuth();
+    if(this.userData){
+      this.isAuthenticated = true
+    }
+
     await this.getUserStatus();
     await this.getAllStatus();
-    console.log(this.userData);
+    console.log("session navbar: " + JSON.stringify(this.userData));
   }
 };
 </script>
@@ -208,7 +212,7 @@ export default {
   border-color: var(--textVue);
 }
 .navbar {
-  background-color: var(--backgroundVue);
+  background-color: #EEE;
 }
 a {
   color: var(--textVue);

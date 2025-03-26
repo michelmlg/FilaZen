@@ -10,7 +10,7 @@ export default {
         conversao: 54
       },
       isUserFirst: false,
-      userData: null
+      userData: this.$session
     };
   },
   methods: {
@@ -54,37 +54,44 @@ export default {
 
         const data = await response.json(); // Parse the JSON response
         if (data.status === 'success' && data.id) {
-          this.$router.push("/dashboard/register-order?id=" + data.id);
-        } else {
+          // this.$router.push("/dashboard/register-order", { query: id});
+
+          this.$router.push({ 
+            name: 'register-order', // Nome da rota
+            query: { 
+              id: data.id, // Parâmetro que você deseja passar
+            }
+          });
           console.error("Failed to get order ID:", data);
+        }else{
           alert("Failed to open order. Please try again.");
         }
       }
     },
-    async checkAuth() {
-      try {
-        const response = await fetch("/backend/controllers/authController.php", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          credentials: "include"
-        });
+    // async checkAuth() {
+    //   try {
+    //     const response = await fetch("/backend/controllers/authController.php", {
+    //       method: "GET",
+    //       headers: {
+    //         "Content-Type": "application/json"
+    //       },
+    //       credentials: "include"
+    //     });
 
-        if (!response.ok) throw new Error("Erro ao verificar autenticação");
+    //     if (!response.ok) throw new Error("Erro ao verificar autenticação");
 
-        const data = await response.json();
-        console.log(data);
-        if (data.user_session) {
-          this.userData = data.user_session;
-        }
-      } catch (error) {
-        console.error("Erro na verificação de autenticação:", error);
-      }
-    },
+    //     const data = await response.json();
+    //     console.log(data);
+    //     if (data.user_session) {
+    //       this.userData = data.user_session;
+    //     }
+    //   } catch (error) {
+    //     console.error("Erro na verificação de autenticação:", error);
+    //   }
+    // },
   },
   async mounted() {
-    await this.checkAuth();
+    // await this.checkAuth();
     await this.verificarFila(); // Chama o método para obter a fila assim que o componente for montado
   }
 };
