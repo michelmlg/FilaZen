@@ -222,6 +222,7 @@ export default {
       this.getCurrentDate();
       // Extract the order ID from the route parameters
       const orderId = this.$route.query.id;
+      this.newOrder.id = this.$route.query.id;
       if (orderId) {
         // If there's an order ID, fetch the order data
         await this.fetchOrderData(orderId);
@@ -246,6 +247,7 @@ export default {
 
       // Include only necessary fields, including the ID
       const dataToSend = {
+        action: "createOrder",
         id: this.newOrder.id, // Include the order ID
         client_id: this.selectedCustomer,
         status_id: this.selectedStatus,

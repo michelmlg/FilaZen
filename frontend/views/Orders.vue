@@ -89,6 +89,14 @@ export default {
           confirmButtonText: 'OK'
         });
       }
+    },
+    viewOrder(order_id){
+      this.$router.push({ 
+            name: 'order', 
+            params: { 
+              id: order_id, 
+            }
+          });
     }
   },
   computed: {
@@ -207,9 +215,9 @@ export default {
                 <td>{{ order.seller_name }}</td>
                 <td>{{ order.estimated_value }}</td>
                 <td>{{ order.created_at }}</td>
-                <td>{{ order.expected_delivery_date }}</td>
+                <td>{{ order.delivery_date }}</td>
                 <td>
-                  <button class="btn btn-secondary btn-sm rounded me-2" @click="viewOrder(order)">
+                  <button class="btn btn-secondary btn-sm rounded me-2" @click="viewOrder(order.order_id)">
                     <i class="fa-solid fa-eye"></i>
                   </button>
                   <button class="btn btn-danger btn-sm rounded me-2" @click="deleteOrder(order)">

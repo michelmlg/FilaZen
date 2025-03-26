@@ -52,8 +52,6 @@ import('./routes/index.js').then(({ default: router }) => {
 
     app.config.globalProperties.$session = null;
 
-    
-
     // Adiciona um beforeEach para verificar a sessão antes de cada navegação
     router.beforeEach(async (to, from, next) => {
         const session = await checkAuth();

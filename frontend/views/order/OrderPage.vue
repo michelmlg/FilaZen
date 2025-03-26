@@ -88,139 +88,30 @@
         </div>
 
         
-        <!-- Order Interactions -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">Interações do pedido</h5>
-            </div>
-            
-            <div class="card-body bg-secondary rounded-bottom overflow-auto" style="min-height: 60vh; max-height: 80vh;">
-              <div v-for="interaction in interactions" :key="interaction.created_at" class="d-flex flex-column mb-3" :class="{
-                  'align-items-start': interaction.type === 'customer_message',
-                  'align-items-end': interaction.type === 'seller_note'
-              }">
-                  <span class="text-white mb-1 text-start">
-                      <i :class="interaction.type === 'customer_message' ? 'fa-solid fa-paper-plane' : 'fa-solid fa-pen'"></i>
-                      {{ formatDateTime(interaction.created_at) }}
-                  </span>
-                  <div :class="interaction.type === 'customer_message' ? 'alert alert-success w-75' : 'alert alert-secondary w-75'">
-                      <span class="fw-bold fs-6">Criado por:</span> {{ getUserName(interaction.created_by) }} <br>
-                      {{ interaction.body }}
-                  </div>
-              </div>
-          </div>
-        </div>
+      <!-- Order Interactions -->
+      <Interactions :interactions="this.order.interactions" :users="this.orderData.seller"></Interactions>
 
-        <!-- Order Interaction Form -->
-        <div class="card shadow-sm mb-4 rounded">
-            <div class="card-header">
-                <h5 class="mb-0">Adicionar Interação</h5>
-            </div>
-        <div class="card-body rounded-bottom">
-
-            <!-- Tabs for Message or Notes -->
-            <ul class="nav nav-tabs" id="interactionTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <a class="nav-link active" id="message-tab" data-bs-toggle="tab" href="#message" role="tab" aria-controls="message" aria-selected="true">Mensagem</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" id="notes-tab" data-bs-toggle="tab" href="#notes" role="tab" aria-controls="notes" aria-selected="false">Notas</a>
-            </li>
-            </ul>
-
-            <div class="tab-content mt-3" id="interactionTabsContent">
-            <!-- Message Form -->
-            <div class="tab-pane fade show active" id="message" role="tabpanel" aria-labelledby="message-tab">
-                <div class="form-group">
-                    <form action="">
-                        <label for="messageInput" class="form-label">Mensagem</label>
-                        <textarea id="messageInput" v-model="orderData.message" class="form-control" rows="4" placeholder="Digite sua mensagem..."></textarea>
-                        <button class="btn btn-sm text-light mt-2 mb-4" style="background-color: var(--textVue);">
-                            <i class="fa-solid fa-paper-plane"></i> Adicionar Mensagem
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Notes Form -->
-            <div class="tab-pane fade" id="notes" role="tabpanel" aria-labelledby="notes-tab">
-                <div class="form-group">
-                    <form action="">
-                        <label for="notesInput" class="form-label">Notas</label>
-                        <textarea id="notesInput" v-model="orderData.notes" class="form-control" rows="4" placeholder="Digite suas notas..."></textarea>
-                        <button class="btn btn-sm text-light mt-2 mb-4" style="background-color: var(--textVue);">
-                            <i class="fa-solid fa-pen"></i> Adicionar Nota
-                        </button>
-                    </form>
-                </div>
-            </div>
-            </div>
-        </div>
-        </div>
+      <OrderInteractionForm @add-interaction="handleNewInteraction" :id="this.order.id"></OrderInteractionForm>
 
 
         
 
      <!-- Financial Information -->
-     <div class="card shadow-sm mb-4">
-          <div class="card-header bg-light">
-            <h5 class="mb-0">Informações Financeiras</h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Valor Estimado</label>
-                <div class="input-group">
-                  <span class="input-group-text">R$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    class="form-control shadow-sm"
-                    v-model="orderData.value"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Desconto</label>
-                <div class="input-group">
-                  <span class="input-group-text">R$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    class="form-control shadow-sm"
-                    v-model="orderData.discount"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Valor Final</label>
-                <div class="input-group">
-                  <span class="input-group-text">R$</span>
-                  <input
-                    type="text"
-                    class="form-control shadow-sm"
-                    :value="calculateFinalValue"
-                    disabled
-                  />
-                </div>
-              </div>
-              <div class="col-md-3 mb-3">
-                  <label class="form-label">Delivery Date</label>
-                  <input type="date" 
-                        
-                          class="form-control shadow-sm" 
-                          required>
-              </div>
-            </div>
-          </div>
-        </div>
+     <FinancialData :order="order"></FinancialData>
     </div>
   </template>
   
   <script>
+import FinancialData from './components/FinancialData.vue';
+import Interactions from './components/Interactions.vue';
+import OrderInteractionForm from './components/OrderInteractionForm.vue';
+
+
+
   export default {
+    components:{
+        Interactions, OrderInteractionForm, FinancialData
+    },
     data() {
       return {
         selectedStatus: null,
@@ -232,6 +123,9 @@
           id: this.$route.params.id,
           created_at: null,
           interactions: null,
+          estimated_value: 0,
+          discount: 0,
+          delivery_date: null,
         },
         orderData: {
           status: [],
@@ -256,11 +150,9 @@
     },
     async mounted() {
       try {
-        this.getCurrentDate();
         await this.fetchFormData(); 
-
         await this.fetchCurrentData();
-
+        console.log(this.order.interactions);
 
       } catch (error) {
         console.error("Error in mounted:", error);
@@ -344,6 +236,9 @@
               this.selectedSeller = orderData.order.employee_id;
               this.selectedStatus = orderData.order.status_id;
               this.order.created_at = orderData.order.created_at;
+              this.order.estimated_value = orderData.order.estimated_value;
+              this.order.discount = orderData.order.discount;
+              this.order.delivery_date = orderData.order.delivery_date;
 
               this.order.interactions = interactionData.interactions;
 
@@ -352,14 +247,26 @@
               console.error('Error fetching order data:', error);
           }
         },
-        getCurrentDate() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            const hours = String(today.getHours()).padStart(2, '0');
-            const minutes = String(today.getMinutes()).padStart(2, '0');
-            this.currentDate = `${day}/${month}/${year} ${hours}:${minutes}`;
+        async handleNewInteraction(interaction) {
+          try {
+            const response = await fetch("/backend/controllers/orderController.php", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(interaction),
+            });
+
+            if (!response.ok) {
+              throw new Error("Erro ao enviar interação!");
+            }
+
+            const result = await response.json();
+  
+            this.order.interactions.push(result.interaction);
+          } catch (error) {
+            console.error("Erro:", error);
+          }
         }
     }
   };

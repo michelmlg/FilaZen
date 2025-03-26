@@ -53,7 +53,8 @@ const routes = [
             },
             {
                 path: 'order/:id', 
-                component: () => loadModule("/frontend/views/dashboard/order/OrderLog.vue", options),
+                name: 'order',
+                component: () => loadModule("/frontend/views/order/OrderPage.vue", options),
             },
             {
                 path: 'clients', 
@@ -65,6 +66,7 @@ const routes = [
             },
             {
                 path: 'register-order', 
+                name: 'register-order',
                 component: () => loadModule("/frontend/views/RegisterOrder.vue", options),
             },
         ]
