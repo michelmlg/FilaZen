@@ -27,96 +27,24 @@ if ($method == 'GET') {
     try {
         $pdo = getConnection();
         
-        // Handle different GET actions
-        if (isset($_GET['action'])) {
-            // Reserve an order ID action
-            if ($_GET['action'] === 'reserve_id') {
-                try {
-                    // Start a transaction
-                    $pdo->beginTransaction();
+        if (isset($_GET['getStatus']) && $_GET['getStatus'] === 'true') {      
+                $status_list = Order::getAllOrderStatuses($pdo);
+                echo json_encode([
+                    "status" => "success", 
+                    "status_list" => $status_list
                     
-                    // Insert a placeholder row to reserve an ID
-                    $stmt = $pdo->prepare("INSERT INTO orders (status_id) VALUES (0)");
-                    $stmt->execute();
-                    
-                    // Get the last inserted ID
-                    $reservedId = $pdo->lastInsertId();
-                    
-                    // Commit the transaction
-                    $pdo->commit();
-                    
-                    echo json_encode([
-                        "status" => "success",
-                        "id" => $reservedId
-                    ]);
-                    exit;
-                } catch (Exception $e) {
-                    if ($pdo->inTransaction()) {
-                        $pdo->rollBack();
-                    }
-                    echo json_encode([
-                        "status" => "error",
-                        "message" => "Failed to reserve order ID: " . $e->getMessage()
-                    ]);
-                    exit;
-                }
-            }
-            // Create order action
-            else if ($_GET['action'] === 'create_order') {
-                try {
-                    // Start a transaction
-                    $pdo->beginTransaction();
-                    
-                    // Insert a new order with default values
-                    $stmt = $pdo->prepare("
-                        INSERT INTO orders 
-                        (status_id, created_at, updated_at) 
-                        VALUES 
-                        (1, NOW(), NOW())
-                    ");
-                    $stmt->execute();
-                    
-                    // Get the last inserted ID
-                    $orderId = $pdo->lastInsertId();
-                    
-                    // Commit the transaction
-                    $pdo->commit();
-                    
-                    echo json_encode([
-                        "status" => "success",
-                        "id" => $orderId
-                    ]);
-                    exit;
-                } catch (Exception $e) {
-                    if ($pdo->inTransaction()) {
-                        $pdo->rollBack();
-                    }
-                    echo json_encode([
-                        "status" => "error",
-                        "message" => "Failed to create order: " . $e->getMessage()
-                    ]);
-                    exit;
-                }
-            }
+                ]);
         }
         
-        // Fetch all order statuses
-        else if (isset($_GET['getStatus']) && $_GET['getStatus'] === 'true') {
-            $status_list = Order::getAllOrderStatuses($pdo);
-            echo json_encode([
-                "status" => "success", 
-                "status_list" => $status_list
-            ]);
-        }
-        // Fetch all order origins
         else if (isset($_GET['getOrigin']) && $_GET['getOrigin'] === 'true') {
             $origin_list = Order::getAllOrderOrigins($pdo);
             echo json_encode([
                 "status" => "success", 
                 "origin_list" => $origin_list
             ]);
-        }
-        // Default: fetch all orders
+        } 
+
+
         else {
             $orders = Order::getAllOrders($pdo);
             echo json_encode(["status" => "success", "data" => $orders]);
@@ -129,43 +57,125 @@ if ($method == 'GET') {
     exit;
 }
 
+
 if ($method == 'POST') {
     try {
-        $inputData = json_decode(file_get_contents("php://input"), true);
         $pdo = getConnection();
 
-        // Validate required fields
-        $required = ['client_id', 'status_id', 'employee_id'];
-        foreach ($required as $field) {
-            if (!isset($inputData[$field])) {
-                throw new Exception("Missing required field: $field");
-            }
+        if (!isset($inputData['action'])) {
+            echo json_encode(["status" => "error", "message" => "Ação não especificada."]);
+            exit;
         }
-
-        // Create new order
-        $order = new Order(
-            $inputData['status_id'],
-            $inputData['client_id'],
-            $inputData['employee_id'],
-            $inputData['description'] ?? '',
-            $inputData['origin_id'] ?? 1,
-            $inputData['estimated_value'] ?? 0,
-            $inputData['discount'] ?? 0,
-            $inputData['delivery_date'] ?? null,
-            $inputData['notes'] ?? null
-        );
-
-        $orderId = $order->store($pdo);
-
-        if ($orderId) {
+        
+        if ($inputData['action'] === 'getOrder') {
+            if (!isset($inputData['order_id'])) {
+                echo json_encode(["status" => "error", "message" => "ID do pedido não fornecido."]);
+                exit;
+            }
+            
+            $order = Order::findById($pdo, $inputData['order_id']);
+            echo json_encode(["status" => "success", "order" => $order ?: "Pedido não encontrado."]);
+            exit;
+        }
+        
+        if ($inputData['action'] === 'getInteractions') {
+            if (!isset($inputData['order_id'])) {
+                echo json_encode(["status" => "error", "message" => "ID do pedido não fornecido."]);
+                exit;
+            }
+            
+            $interactions = Order::getInteractions($pdo, $inputData['order_id']);
             echo json_encode([
                 "status" => "success",
-                "id" => $orderId,
-                "message" => "Order created successfully"
+                "interactions" => $interactions ?: "Esse pedido não possui interações!",
+                "empty_list" => empty($interactions)
             ]);
-        } else {
-            throw new Exception("Failed to create order");
+            exit;
         }
+        
+        if ($inputData['action'] === 'setInteraction') {
+            if (!isset($inputData['order_id'], $inputData['type'], $inputData['body'])) {
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Dados insuficientes para adicionar interação."
+                ]);
+                exit;
+            }
+            
+            $session = Auth::getSession();
+            $user_id = $session['user_session']['id'];
+            $interaction = null;
+        
+            // Adicionar interação e obter o ID da nova interação
+            $interaction_id = Order::addInteraction(
+                $pdo,
+                $inputData['order_id'],
+                $inputData['type'],
+                $inputData['body'],
+                $user_id
+            );
+        
+            if ($interaction_id) {
+                // Buscar a interação recém-criada
+                $stmt = $pdo->prepare("
+                    SELECT id, order_id, type, body, created_by, created_at 
+                    FROM order_interactions 
+                    WHERE id = :id
+                ");
+                $stmt->execute(['id' => $interaction_id]);
+                $interaction = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
+        
+            echo json_encode([
+                "status" => $interaction_id ? "success" : "error",
+                "message" => $interaction_id ? "Interação adicionada!" : "Erro ao adicionar interação.",
+                "interaction" => $interaction ?? null
+            ]);
+            exit;
+        }
+        
+
+
+        if($inputData['action'] === 'createOrder'){
+              // Validate required fields
+              $required = ['id', 'client_id', 'status_id', 'employee_id']; // Include 'id' as required    
+              foreach ($required as $field) {
+                  if (!isset($inputData[$field])) {
+                      throw new Exception("Missing required field: $field");
+                  }
+              }
+      
+                  // Get the order ID from the input data
+              $orderId = $inputData['id'];
+  
+              // Update the order
+              $order = new Order(
+                  $inputData['status_id'],
+                  $inputData['client_id'],
+                  $inputData['employee_id'],
+                  $inputData['description'] ?? '',
+                  $inputData['origin_id'] ?? 1,
+                  $inputData['estimated_value'] ?? 0,
+                  $inputData['discount'] ?? 0,
+                  $inputData['delivery_date'] ?? null,
+                  $inputData['notes'] ?? null
+              );
+  
+              $updated = $order->update($pdo, $orderId); // Call the update method
+  
+              if ($updated) {
+                  echo json_encode([
+                      "status" => "success",
+                      "id" => $orderId,
+                      "message" => "Order updated successfully"
+                  ]);
+              }
+  
+        }
+
+
+        
+
     } catch (Exception $e) {
         echo json_encode([
             "status" => "error",
