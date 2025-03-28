@@ -12,7 +12,7 @@ export default {
       },
       startIndex: 1, 
       isUserFirst: false,
-      userData: null,
+      userData: this.$session,
       pedidos: [
       ],
     };
@@ -61,14 +61,9 @@ export default {
         console.error('Erro ao fazer requisição:', error);
       }
     },
-    redirecionarParaPedido() {
+    async redirecionarParaPedido() {
       if (this.isUserFirst) {
-        this.$router.push('/dashboard/register-order');
-      }
-    },
-    async checkAuth() {
-      try {
-        const response = await fetch("/backend/controllers/authController.php", {
+        const response = await fetch("/backend/controllers/orderController.php?action=open_order", {
           method: "GET",
           headers: {
             "Content-Type": "application/json"
@@ -76,20 +71,24 @@ export default {
           credentials: "include"
         });
 
-        if (!response.ok) throw new Error("Erro ao verificar autenticação");
+        const data = await response.json(); // Parse the JSON response
+        if (data.status === 'success' && data.id) {
+          // this.$router.push("/dashboard/register-order", { query: id});
 
-        const data = await response.json();
-        console.log(data);
-        if (data.user_session) {
-          this.userData = data.user_session;
+          this.$router.push({ 
+            name: 'register-order', // Nome da rota
+            query: { 
+              id: data.id, // Parâmetro que você deseja passar
+            }
+          });
+          console.error("Failed to get order ID:", data);
+        }else{
+          alert("Failed to open order. Please try again.");
         }
-      } catch (error) {
-        console.error("Erro na verificação de autenticação:", error);
       }
     },
   },
   async mounted() {
-    await this.checkAuth();
     await this.verificarFila();
   }
 };

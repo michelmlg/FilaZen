@@ -31,7 +31,7 @@ if ($method == 'GET') {
 
     $pdo = getConnection();
 
-    $query = "SELECT o.id as order_id, os.name as status, c.name as client_name, oo.name as origin, u.full_name as seller_name, o.description as description, o.estimated_value, o.discount, o.created_at, o.expected_delivery_date FROM orders as o INNER JOIN order_status as os ON o.status_id = os.id INNER JOIN order_origin as oo ON o.origin_id = oo.id INNER JOIN client c ON o.client_id = c.id INNER JOIN user u ON o.employee_id = u.id;";
+    $query = "SELECT o.id as order_id, os.name as status, c.name as client_name, oo.name as origin, u.full_name as seller_name, o.description as description, o.estimated_value, o.discount, o.created_at, o.delivery_date FROM orders as o INNER JOIN order_status as os ON o.status_id = os.id INNER JOIN order_origin as oo ON o.origin_id = oo.id INNER JOIN client c ON o.client_id = c.id INNER JOIN user u ON o.employee_id = u.id;";
     $stmt = $pdo->prepare($query);
     $stmt->execute();
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);

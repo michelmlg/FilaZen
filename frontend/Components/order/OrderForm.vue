@@ -182,7 +182,8 @@
   </div>
 </template>
 
-<script>
+<script>  
+
 export default {
   data() {
     return {
@@ -219,7 +220,16 @@ export default {
   async mounted() {
     try {
       this.getCurrentDate();
-      await this.fetchData(); // Only fetch data, no order creation
+      // Extract the order ID from the route parameters
+      const orderId = this.$route.query.id;
+      this.newOrder.id = this.$route.query.id;
+      if (orderId) {
+        // If there's an order ID, fetch the order data
+        await this.fetchOrderData(orderId);
+      } else {
+        // Otherwise, fetch the base data (status, customer, seller, origin)
+        await this.fetchData();
+      }
     } catch (error) {
       console.error("Error in mounted:", error);
     } finally {
@@ -235,8 +245,10 @@ export default {
     async saveOrder() {
       if (!this.validateForm()) return;
 
-      // Include only necessary fields, exclude the ID
+      // Include only necessary fields, including the ID
       const dataToSend = {
+        action: "createOrder",
+        id: this.newOrder.id, // Include the order ID
         client_id: this.selectedCustomer,
         status_id: this.selectedStatus,
         employee_id: this.selectedSeller,
@@ -275,13 +287,19 @@ export default {
             this.newOrder.id = data.id;
           }
           
-          Swal.fire({
-            icon: 'success',
-            title: 'Pedido Salvo!',
-            text: `Pedido #${this.newOrder.id} salvo com sucesso!`,
-            confirmButtonColor: '#28a745',
-            timer: 3000
-          });
+          // SweetAlert2 usage (assuming it's correctly loaded via CDN)
+          if (window.Swal) {
+            window.Swal.fire({
+              icon: 'success',
+              title: 'Pedido Salvo!',
+              text: `Pedido #${this.newOrder.id} salvo com sucesso!`,
+              confirmButtonColor: '#28a745',
+              timer: 3000
+            });
+          } else {
+            console.warn('SweetAlert2 not loaded.  Check your CDN inclusion.');
+            alert('Pedido Salvo! (SweetAlert2 not available)'); // Fallback
+          }
           
           console.log('Order saved successfully:', data);
         } else {
@@ -290,12 +308,18 @@ export default {
       } catch (error) {
         console.error('Error saving order:', error);
         
-        Swal.fire({
-          icon: 'error',
-          title: 'Erro',
-          text: `Erro ao salvar o pedido: ${error.message}`,
-          confirmButtonColor: '#dc3545'
-        });
+        // SweetAlert2 usage (assuming it's correctly loaded via CDN)
+        if (window.Swal) {
+          window.Swal.fire({
+            icon: 'error',
+            title: 'Erro',
+            text: `Erro ao salvar o pedido: ${error.message}`,
+            confirmButtonColor: '#dc3545'
+          });
+        } else {
+          console.warn('SweetAlert2 not loaded.  Check your CDN inclusion.');
+          alert(`Erro ao salvar o pedido: ${error.message} (SweetAlert2 not available)`); // Fallback
+        }
       } finally {
         this.isLoading = false;
       }
@@ -303,13 +327,18 @@ export default {
     
     validateForm() {
       if (!this.selectedStatus || !this.selectedCustomer || !this.selectedSeller) {
-        // Use SweetAlert for validation
-        Swal.fire({
-          icon: 'warning',
-          title: 'Campos Obrigatórios',
-          text: 'Por favor, preencha todos os campos obrigatórios.',
-          confirmButtonColor: '#ffc107'
-        });
+        // SweetAlert2 usage (assuming it's correctly loaded via CDN)
+        if (window.Swal) {
+          window.Swal.fire({
+            icon: 'warning',
+            title: 'Campos Obrigatórios',
+            text: 'Por favor, preencha todos os campos obrigatórios.',
+            confirmButtonColor: '#ffc107'
+          });
+        } else {
+          console.warn('SweetAlert2 not loaded.  Check your CDN inclusion.');
+          alert('Por favor, preencha todos os campos obrigatórios. (SweetAlert2 not available)'); // Fallback
+        }
         return false;
       }
       return true;
@@ -337,13 +366,62 @@ export default {
 
         this.orderData = {
           ...this.orderData,
-          status: statusData.status_list || [],
-          customer: customerData.clients || [],
-          seller: sellerData.data || [],
-          origin: originData.origin_list || []
+          status: statusData.status_list,
+          customer: customerData.clients,
+          seller: sellerData.data,
+          origin: originData.origin_list
         };
       } catch (error) {
         console.error('Error fetching data:', error);
+      }
+    },
+    async fetchOrderData(orderId) {
+      try {
+        this.isLoading = true;
+        // Fetch base data and order data in parallel
+        const [baseDataResponse, orderResponse] = await Promise.all([
+          this.fetchData(), // Fetch status, customer, seller, origin
+          fetch(`/backend/controllers/orderController.php?id=${orderId}`) // Fetch specific order
+        ]);
+
+        const orderData = await orderResponse.json();
+
+        if (orderData.status === 'success' && orderData.order) {
+          const order = orderData.order;
+          this.newOrder = {
+            id: order.id,
+            delivery_date: order.delivery_date,
+          };
+          this.selectedStatus = order.status_id;
+          this.selectedCustomer = order.client_id;
+          this.selectedSeller = order.employee_id;
+          this.selectedOrigin = order.origin_id;
+          this.orderData = {
+            ...this.orderData,
+            value: order.estimated_value,
+            discount: order.discount,
+            description: order.description,
+            notes: order.notes,
+          };
+        } else {
+          throw new Error(orderData.message || 'Failed to fetch order data');
+        }
+      } catch (error) {
+        console.error('Error fetching order data:', error);
+        // SweetAlert2 usage (assuming it's correctly loaded via CDN)
+        if (window.Swal) {
+          window.Swal.fire({
+            icon: 'error',
+            title: 'Erro',
+            text: `Erro ao carregar os dados do pedido: ${error.message}`,
+            confirmButtonColor: '#dc3545'
+          });
+        } else {
+          console.warn('SweetAlert2 not loaded.  Check your CDN inclusion.');
+          alert(`Erro ao carregar os dados do pedido: ${error.message} (SweetAlert2 not available)`);
+        }
+      } finally {
+        this.isLoading = false;
       }
     },
     getCurrentDate() {
