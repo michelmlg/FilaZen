@@ -5,12 +5,7 @@ export default {
     return {
       usuarios: [
       ],
-      infoVenda: {
-        clientes: 35,
-        compraram: 19,
-        conversao: 54
-      },
-      startIndex: 1, 
+      startIndex: 0, 
       isUserFirst: false,
       userData: this.$session,
       pedidos: [
@@ -19,7 +14,7 @@ export default {
   },
   computed: {
     usuariosPaginados() {
-      return [this.usuarios[0], ...this.usuarios.slice(this.startIndex, this.startIndex + 4)];
+      return this.usuarios.slice(this.startIndex, this.startIndex + 4);
     }
   },
   methods: {
@@ -30,18 +25,16 @@ export default {
         this.obterFila();
       }, 5000);
     },
-
     descerUsuario() {      
-      if (this.startIndex < this.usuarios.length - 4) {
+      if (this.startIndex < this.usuarios.length - 3) {
         this.startIndex++;
       }
     },
     subirUsuario() {      
-      if (this.startIndex > 1) {
+      if (this.startIndex > 0) {
         this.startIndex--;
       }
     },
-
     async obterFila() {
       try {
         const response = await fetch('/backend/controllers/queueController.php');
@@ -70,18 +63,18 @@ export default {
           },
           credentials: "include"
         });
-
         const data = await response.json(); // Parse the JSON response
-        if (data.status === 'success' && data.id) {
+        console.log(data);
+        if (data.status === 'success' && data.data[0].id) {
           // this.$router.push("/dashboard/register-order", { query: id});
 
           this.$router.push({ 
             name: 'register-order', // Nome da rota
             query: { 
-              id: data.id, // Parâmetro que você deseja passar
+              id: data.data[0].id, // Parâmetro que você deseja passar
             }
           });
-          console.error("Failed to get order ID:", data);
+          //console.error("Failed to get order ID:", data);
         }else{
           alert("Failed to open order. Please try again.");
         }
@@ -103,6 +96,7 @@ export default {
           <div v-for="(usuario, index) in usuariosPaginados" :key="usuario.full_name" 
                class="usuario" 
                :class="[{ 'destaque': index === 0 }, 'mb-4']">
+            <span>{{ startIndex + index + 1 }}º</span>
             <img :src="usuario.img_path || '../../public/assets/images/usuario_template.png'" class="rounded-circle" alt="Usuário">
             <span>{{ usuario.full_name }}</span>
           </div>
@@ -118,16 +112,18 @@ export default {
       </div>
     </section>
 
-    <section class="right-section d-flex flex-column justify-content-between">
-      <div class="info-section mt-5 pt-5 pb-5 pe-5 me-5 d-flex flex-column">
+    <section class="right-section mt-4 d-flex flex-column justify-content-between">
+      <div class="info-section d-flex flex-column" :class="{ 'destaque-usuario': isUserFirst }">
         <div class="d-flex flex-column align-items-center text-center">
           <i v-if="!isUserFirst" class="fa-solid fa-lock"></i>
+          
           <button
-            v-if="isUserFirst" 
-            class="btn btn-lg btn-outline-secondary botao-abrir btn-big-padding mt-2" 
+            v-if="isUserFirst"
+            class="btn btn-lg botao-abrir btn-big-padding mt-2 efeito-pulsante"
             @click="redirecionarParaPedido">
-            Abrir pedido
+            Abrir pedido!
           </button>
+
           <button 
             v-else
             class="btn btn-lg btn-outline-secondary botao-abrir btn-big-padding mt-2" 
@@ -135,27 +131,15 @@ export default {
             Você não é o primeiro da fila!
           </button>
         </div>
-        <div class="info-venda text-center">
-          <table class="table table-striped table-sm text-center">
-            <tr>
-              <td class="text-start">Clientes:</td>
-              <td class="text-end">{{ infoVenda.clientes }}</td>
-            </tr>
-            <tr>
-              <td class="text-start">Compraram:</td>
-              <td class="text-end">{{ infoVenda.compraram }}</td>
-            </tr>
-            <tr>
-              <td class="text-start">Conversão:</td>
-              <td class="text-end">{{ infoVenda.conversao }}%</td>
-            </tr>
-          </table>
-        </div>
       </div>
 
-      <div class="meus-pedidos mt-3 pb-5 me-5 pe-5 d-flex flex-column">
+
+      <div class="d-flex flex-column">
         <h3 class="text-center flex-grow-1 me-3">Meus pedidos</h3>
-        <table class="table table-meus-pedidos">
+        <div class="text-center">
+          <p>Carregando pedidos...</p>
+        </div>
+        <table  class="table table-meus-pedidos">
           <thead>
             <tr>
               <th>Ticket</th>
@@ -163,6 +147,9 @@ export default {
             </tr>
           </thead>
           <tbody>
+            <tr v-if="pedidos.length === 0">
+              <td colspan="2" class="text-center">Nenhum pedido encontrado.</td>
+            </tr>
             <tr v-for="pedido in pedidos" :key="pedido.ticket">
               <td>{{ pedido.ticket }}</td>
               <td>{{ pedido.cliente }}</td>
@@ -188,7 +175,8 @@ export default {
 .main-container {
   display: flex;
   justify-content: space-between;
-  padding: 20px;
+  padding-left: 2rem;
+  padding-right: 2rem;
 }
 
 .left-section {
@@ -249,16 +237,39 @@ export default {
   position: absolute;
 }
 
-.table-meus-pedidos {
-  border: 3px solid;
-  border-color: aqua;
-}
-
 .btn-big-padding {
   padding-top: 2rem;
   padding-bottom: 2rem;
   padding-left: 4rem;
   padding-right: 4rem;
 }
+
+.botao-abrir {
+  background: linear-gradient(135deg, var(--primaryVue), var(--secondaryVue));
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.botao-abrir:hover {
+  filter: brightness(1.2);
+  transform: scale(1.05);
+  box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.3);
+}
+
+.efeito-pulsante {
+  animation: pulsar 1.5s infinite ease-in-out;
+}
+
+@keyframes pulsar {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
 
 </style>
