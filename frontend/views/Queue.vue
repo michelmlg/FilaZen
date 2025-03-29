@@ -90,25 +90,36 @@ export default {
 <template>
   <div class="main-container d-flex">
     <section class="left-section ms-2 me-2 d-flex flex-column">
-      <div class="w-70 ms-4">
-        <h2 class="mb-2">A vez é de</h2>
-        <transition-group name="fila" tag="div">
-          <div v-for="(usuario, index) in usuariosPaginados" :key="usuario.full_name" 
-               class="usuario" 
-               :class="[{ 'destaque': index === 0 }, 'mb-4']">
-            <span>{{ startIndex + index + 1 }}º</span>
-            <img :src="usuario.img_path || '../../public/assets/images/usuario_template.png'" class="rounded-circle" alt="Usuário">
-            <span>{{ usuario.full_name }}</span>
-          </div>
-        </transition-group>
+      <div v-if="usuarios.length > 0" class="fila">
+        <div class="w-70 ms-4">
+          <h2 class="mb-2">A vez é de</h2>
+          <transition-group name="fila" tag="div">
+            <div v-for="(usuario, index) in usuariosPaginados" :key="usuario.full_name" 
+                 class="usuario" 
+                 :class="[{ 'destaque': index === 0 }, 'mb-4']">
+              <span>{{ startIndex + index + 1 }}º</span>
+              <img :src="usuario.img_path || '../../public/assets/images/usuario_template.png'" class="rounded-circle" alt="Usuário">
+              <span>{{ usuario.full_name }}</span>
+            </div>
+          </transition-group>
+        </div>
+        <div class="d-flex justify-content-start ms-4 mb-2 mt-4">
+          <button class="btn btn-outline-secondary btn-sm me-2" @click="descerUsuario">
+            <i class="fa-solid fa-arrow-down"></i>
+          </button>
+          <button class="btn btn-outline-secondary btn-sm ms-2" @click="subirUsuario">
+            <i class="fa-solid fa-arrow-up"></i>
+          </button>
+        </div>
       </div>
-      <div class="d-flex justify-content-start ms-4 mb-2 mt-4">
-        <button class="btn btn-outline-secondary btn-sm me-2" @click="descerUsuario">
-          <i class="fa-solid fa-arrow-down"></i>
-        </button>
-        <button class="btn btn-outline-secondary btn-sm ms-2" @click="subirUsuario">
-          <i class="fa-solid fa-arrow-up"></i>
-        </button>
+      <div v-else>
+        <div  class="mt-4">
+                <div class="w-50">
+                  <div class="alert alert-secondary">
+                    <h5 class="mt-2 text-muted">A fila está vazia...</h5>
+                  </div>
+                </div>
+            </div>
       </div>
     </section>
 
@@ -134,7 +145,7 @@ export default {
       </div>
 
 
-      <div class="d-flex flex-column">
+      <div class="d-flex flex-column mt-4">
         <h3 class="text-center flex-grow-1 me-3">Meus pedidos</h3>
         <div class="text-center">
           <p>Carregando pedidos...</p>
