@@ -13,7 +13,7 @@
                 </span>
                 <div :class="interaction.type === 'customer_message' ? 'alert alert-secondary w-75' : 'alert alert-success w-75'">
                     <span class="fw-bold fs-6">Criado por:</span> {{ getUserName(interaction.created_by) }} <br>
-                    {{ interaction.body }}
+                    <span v-html="interaction.body.replace(/\n/g, '<br>')"></span>
                 </div>
             </div>
         </div>

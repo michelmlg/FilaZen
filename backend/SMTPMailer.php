@@ -21,12 +21,12 @@ class SMTPMailer {
 
         try {
             $mail->isSMTP();
-            $mail->Host = getenv('SMTP_ZOHO'); // Servidor SMTP do Gmail
+            $mail->Host = getenv('SMTP_ZOHO'); 
             $mail->SMTPAuth = true;
-            $mail->Username = getenv('ZOHO_USER'); // Seu e-mail do Gmail
-            $mail->Password = getenv('ZOHO_PASSWORD'); // Senha de App do Gmail
-            $mail->SMTPSecure = getenv('ZOHO_SMTP_MODE'); // Segurança TLS
-            $mail->Port = getenv('ZOHO_PORT'); // Porta SMTP do Gmail
+            $mail->Username = getenv('ZOHO_USER'); 
+            $mail->Password = getenv('ZOHO_PASSWORD'); 
+            $mail->SMTPSecure = getenv('ZOHO_SMTP_MODE'); 
+            $mail->Port = getenv('ZOHO_PORT'); 
             $mail->CharSet = 'UTF-8';
             $mail->setFrom(getenv('ZOHO_USER'), 'Filazen'); 
             $mail->addAddress($this->receiver);
