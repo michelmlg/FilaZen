@@ -161,12 +161,37 @@ class Order {
     }
 
     public static function findByEmployeeId($pdo, $employee_id) {
-        $sql = "SELECT * FROM orders WHERE employee_id = :employee_id";
+        $sql = "SELECT 
+                    o.id as id,
+                    o.status_id as status_id,
+                    os.name as status,
+                    o.origin_id as origin_id,
+                    oo.name as origin,
+                    o.client_id as client_id,
+                    c.name as client_name,
+                    o.employee_id as employee_id,
+                    u.full_name as employee_name,
+                    o.description as description,
+                    o.estimated_value as estimated_value,
+                    o.discount as discount,
+                    o.created_at as created_at,
+                    o.delivery_date as delivery_date,
+                    o.notes as notes
+                FROM orders o
+                INNER JOIN client c ON c.id = o.client_id
+                INNER JOIN user u ON u.id = o.employee_id
+                INNER JOIN order_status os ON os.id = o.status_id
+                INNER JOIN order_origin oo ON oo.id = o.origin_id
+                WHERE o.employee_id = :employee_id AND o.status_id != 4";
+        
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':employee_id', $employee_id, PDO::PARAM_INT);
-        $stmt->execute();
+        if (!$stmt->execute()) {
+            var_dump($stmt->errorInfo()); // Exibe erros SQL
+        }
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    
 
     public static function findByDescription($pdo, $description) {
         $sql = "SELECT * FROM orders WHERE description LIKE :description";
