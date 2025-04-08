@@ -37,12 +37,23 @@ if ($method == 'GET') {
         }
         
         else if (isset($_GET['getOrigin']) && $_GET['getOrigin'] === 'true') {
-            $origin_list = Order::getAllOrderOrigins($pdo);
+            $origin_list = Order::getAllOrderOrigins($pdo, );
             echo json_encode([
                 "status" => "success", 
                 "origin_list" => $origin_list
             ]);
+        }
+
+        else if (isset($_GET['getUserOrders']) && $_GET['getUserOrders'] === 'true') {
+            $session = Auth::getSession();
+            $origin_list = Order::findByEmployeeId($pdo, $session['user_session']['id']);
+            echo json_encode([
+                "status" => "success", 
+                "orders" => $origin_list,
+                "user_id" => $session['user_session']['id']
+            ]);
         } 
+
 
 
         else {

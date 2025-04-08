@@ -8,8 +8,9 @@ export default {
       startIndex: 0, 
       isUserFirst: false,
       userData: this.$session,
-      pedidos: [
-      ],
+      orders: [],
+      ordersIsLoading: true,
+      currentDate: new Date().toISOString().split('T')[0]
     };
   },
   computed: {
@@ -18,24 +19,24 @@ export default {
     }
   },
   methods: {
-    verificarFila() {
-      this.obterFila();
+    verifyQueue() {
+      this.getQueue();
       
       setInterval(() => {
-        this.obterFila();
+        this.getQueue();
       }, 5000);
     },
-    descerUsuario() {      
+    downUsersList() {      
       if (this.startIndex < this.usuarios.length - 3) {
         this.startIndex++;
       }
     },
-    subirUsuario() {      
+    upUsersList() {      
       if (this.startIndex > 0) {
         this.startIndex--;
       }
     },
-    async obterFila() {
+    async getQueue() {
       try {
         const response = await fetch('/backend/controllers/queueController.php');
         const data = await response.json();
@@ -54,7 +55,7 @@ export default {
         console.error('Erro ao fazer requisição:', error);
       }
     },
-    async redirecionarParaPedido() {
+    async redirectToNewOrder() {
       if (this.isUserFirst) {
         const response = await fetch("/backend/controllers/orderController.php?action=open_order", {
           method: "GET",
@@ -80,9 +81,67 @@ export default {
         }
       }
     },
+    async fetchUserOrders() {
+      try {
+        const response = await fetch('/backend/controllers/orderController.php?getUserOrders=true', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          this.orders = data.orders;
+          this.ordersIsLoading = false;
+        } else {
+          console.error('Erro ao obter pedidos:', data.message);
+        }
+      } catch (error) {
+        console.error('Erro ao fazer requisição:', error);
+      }
+    },
+    viewOrder(order_id){
+      this.$router.push({ 
+            name: 'order', 
+            params: { 
+              id: order_id, 
+            }
+          });
+    },
+    formatDate(date) {
+      if (!date) return "-";
+      const d = new Date(date);
+      return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    },
+    getStatusClass(status) {
+      switch (status.toLowerCase()) {
+        case "em atendimento":
+          return "badge bg-warning text-dark";
+        case "aberto":
+          return "badge bg-success";
+        case "aguardando terceiros":
+          return "badge bg-danger";
+        default:
+          return "badge bg-secondary";
+      }
+    },
+    calcDaysOpen(openDate, closeDate) {
+      if (!openDate || !closeDate) return "Em aberto";
+
+      const dataInicio = new Date(openDate);
+      const dataFim = new Date(closeDate);
+      
+      const diffEmMilissegundos = dataFim - dataInicio;
+      const diffEmDias = Math.ceil(diffEmMilissegundos / (1000 * 60 * 60 * 24));
+
+      return diffEmDias + " dias";
+    }
   },
   async mounted() {
-    await this.verificarFila();
+    await this.verifyQueue();
+    await this.fetchUserOrders();
   }
 };
 </script>
@@ -93,7 +152,7 @@ export default {
       <div v-if="usuarios.length > 0" class="fila">
         <div class="w-70 ms-4">
           <h2 class="mb-2">A vez é de</h2>
-          <transition-group name="fila" tag="div">
+          <transition-group name="fila" tag="div" style="height: 500px;">
             <div v-for="(usuario, index) in usuariosPaginados" :key="usuario.full_name" 
                  class="usuario" 
                  :class="[{ 'destaque': index === 0 }, 'mb-4']">
@@ -104,22 +163,22 @@ export default {
           </transition-group>
         </div>
         <div class="d-flex justify-content-start ms-4 mb-2 mt-4">
-          <button class="btn btn-outline-secondary btn-sm me-2" @click="descerUsuario">
+          <button class="btn btn-outline-secondary btn-sm me-2" @click="downUsersList">
             <i class="fa-solid fa-arrow-down"></i>
           </button>
-          <button class="btn btn-outline-secondary btn-sm ms-2" @click="subirUsuario">
+          <button class="btn btn-outline-secondary btn-sm ms-2" @click="upUsersList">
             <i class="fa-solid fa-arrow-up"></i>
           </button>
         </div>
       </div>
       <div v-else>
         <div  class="mt-4">
-                <div class="w-50">
-                  <div class="alert alert-secondary">
-                    <h5 class="mt-2 text-muted">A fila está vazia...</h5>
-                  </div>
-                </div>
+            <div class="w-50">
+              <div class="alert alert-secondary">
+                <h5 class="mt-2 text-muted">A fila está vazia...</h5>
+              </div>
             </div>
+        </div>
       </div>
     </section>
 
@@ -131,7 +190,7 @@ export default {
           <button
             v-if="isUserFirst"
             class="btn btn-lg botao-abrir btn-big-padding mt-2 efeito-pulsante"
-            @click="redirecionarParaPedido">
+            @click="redirectToNewOrder">
             Abrir pedido!
           </button>
 
@@ -142,32 +201,52 @@ export default {
             Você não é o primeiro da fila!
           </button>
         </div>
-      </div>
 
-
-      <div class="d-flex flex-column mt-4">
-        <h3 class="text-center flex-grow-1 me-3">Meus pedidos</h3>
-        <div class="text-center">
-          <p>Carregando pedidos...</p>
+        <div class="d-flex justify-content-center align-items-center mt-4">
+          <div class="card shadow-lg w-80">
+            <div class="card-header text-center" style="background-color: var(--textVue); color: var(--secondaryVue)">
+              <h3>Meus pedidos</h3>
+            </div>
+            
+            <div class="card-body overflow-auto" style="max-height: 400px;">
+              <div v-if="ordersIsLoading" class="text-center">
+            <p>Carregando pedidos...</p>
+          </div>
+          <table v-else class="table table-striped table-hover overflow-auto">
+            <thead>
+              <tr>
+                <th><i class="fa-solid fa-ticket"></i> Ticket</th>
+                <th>Status</th>
+                <th>Cliente</th>
+                <th>Data abertura</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="!orders || orders.length === 0">
+                <td colspan="4" class="text-center">Nenhum pedido encontrado.</td>
+              </tr>
+              <tr v-else v-for="order in orders" :key="order.id" class="order" @click="viewOrder(order.id)">
+                <td>
+                    <span class="badge bg-primary">#{{ order.id }}</span>
+                </td>
+                <td>
+                  <span :class="getStatusClass(order.status)">
+                    {{ order.status }}
+                  </span>
+                </td>
+                <td>{{ order.client_name }}</td>
+                <td>  
+                  <span class="text-success">{{ formatDate(order.created_at) }}</span> - {{ calcDaysOpen(order.created_at, currentDate) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+            </div>
+          </div>
         </div>
-        <table  class="table table-meus-pedidos">
-          <thead>
-            <tr>
-              <th>Ticket</th>
-              <th>Cliente</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="pedidos.length === 0">
-              <td colspan="2" class="text-center">Nenhum pedido encontrado.</td>
-            </tr>
-            <tr v-for="pedido in pedidos" :key="pedido.ticket">
-              <td>{{ pedido.ticket }}</td>
-              <td>{{ pedido.cliente }}</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
+
+
     </section>
   </div>
 </template>
@@ -196,7 +275,7 @@ export default {
 }
 
 .right-section {
-  flex: 1;
+  flex: 3;
   padding: 20px;
 }
 
@@ -204,7 +283,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: all 0.5s ease-in-out;
+  transition: all 0.3s ease-in-out;
   opacity: 0.8;
 }
 
@@ -216,7 +295,7 @@ export default {
 .usuario img {
   width: 70px;
   height: 70px;
-  transition: all 0.5s ease-in-out;
+  transition: all 0.3s ease-in-out;
 }
 
 .destaque img {
@@ -236,7 +315,7 @@ export default {
 }
 
 .fila-move {
-  transition: transform 0.9s ease-out, opacity 0.9s ease-out;
+  transition: transform 0.5s ease-out, opacity 0.5s ease-out;
 }
 
 .fila-enter-from, .fila-leave-to {
@@ -281,6 +360,14 @@ export default {
   50% { transform: scale(1.08); }
   100% { transform: scale(1); }
 }
+.order {
+  transition: transform 0.3s ease-in-out, background-color 0.3s ease-in-out;
+}
 
+.order:hover {
+  cursor: pointer;
+  background-color: var(--backgroundVue);
+  transform: scale(1.03);
+}
 
 </style>
