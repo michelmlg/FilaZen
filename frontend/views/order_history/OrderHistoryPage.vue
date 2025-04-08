@@ -1,12 +1,9 @@
 <script>
-
-import OrderForm from '../Components/order/OrderForm.vue';
-import OrderHistory from '../Components/orders/OrderHistoryForm.vue';
-import TableSkeleton from '../Components/skeleton/TableSkeleton.vue';
+import OrderHistory from './components/OrderHistoryForm.vue';
 
 export default {
   name: "Orders",
-  components: {TableSkeleton, OrderHistory, OrderForm},
+  components: {OrderHistory},
   methods: {
     async fetchOrders() {
       try {
@@ -16,6 +13,7 @@ export default {
         console.log(result);
         if(result.status == "success"){
           this.table.orders = result.data;
+          this.table.isLoading = false;
           //this.table.totalPages = result.totalPages;
         }else{
           console.error("Erro ao buscar os dados dos pedidos:", result.message);
@@ -114,6 +112,7 @@ export default {
         orders: [],
         perPageOptions: [10, 25, 50, 100, 200],
         totalPages: 0,
+        isLoading: true,
       },
       headers: [
         "Pedido #",
@@ -125,7 +124,7 @@ export default {
       ]
     };
   },
-  async beforeMount() {
+  async mounted() {
     await this.fetchOrders();
     console.log("Orders:", this.table.orders);
   }
@@ -172,17 +171,17 @@ export default {
           <table id="orders-table" class="table table-striped table-hover">
             <thead>
               <!-- {
-            "order_id": "1",
-            "status": "EM ATENDIMENTO",
-            "client_name": "Luca Giorgi",
-            "origin": "PRESENCIAL",
-            "seller_name": "Michel lisboa",
-            "description": "Cliente solicitou 250 unidades do piso ib\u00e9rico.",
-            "estimated_value": "14210.00",
-            "discount": "100.00",
-            "created_at": "2025-03-17 22:51:22",
-            "expected_delivery_date": "2025-03-17 00:00:00"
-        } -->
+                  "order_id": "1",
+                  "status": "EM ATENDIMENTO",
+                  "client_name": "Luca Giorgi",
+                  "origin": "PRESENCIAL",
+                  "seller_name": "Michel lisboa",
+                  "description": "Cliente solicitou 250 unidades do piso ib\u00e9rico.",
+                  "estimated_value": "14210.00",
+                  "discount": "100.00",
+                  "created_at": "2025-03-17 22:51:22",
+                  "expected_delivery_date": "2025-03-17 00:00:00"
+              } -->
               <tr>
                 <th>#</th>
                 <th>Cliente</th>
@@ -195,7 +194,16 @@ export default {
                 <th>Ações</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody v-if="table.isLoading">
+              <tr>
+                <td colspan="9">
+                  <div class="d-flex justify-content-center align-items-center">
+                    <span>Carregando...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+            <tbody v-else>
               <tr v-if="!pageHasOrders">
                 <td colspan="6">
                   <div class="d-flex justify-content-center align-items-center">

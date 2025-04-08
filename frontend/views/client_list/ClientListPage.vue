@@ -1,10 +1,9 @@
 <script>
-import CreateClientForm from '../Components/clients/CreateClientForm.vue';
-import UpdateClientForm from '../Components/clients/UpdateClientForm.vue';
-import TableSkeleton from '../Components/skeleton/TableSkeleton.vue';
+import CreateClientForm from './components/CreateClientForm.vue';
+import UpdateClientForm from './components/UpdateClientForm.vue';
 export default {
   name: "Clients",
-  components: { CreateClientForm, UpdateClientForm, TableSkeleton },
+  components: { CreateClientForm, UpdateClientForm },
   methods:{
     async fetchClients() {
       try {
