@@ -57,22 +57,25 @@ export default {
     },
     async redirectToNewOrder() {
       if (this.isUserFirst) {
-        const response = await fetch("/backend/controllers/orderController.php?action=open_order", {
-          method: "GET",
+        const response = await fetch("/backend/controllers/orderController.php", {
+          method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
+          body: JSON.stringify({
+            action: "openOrder",
+          }),
           credentials: "include"
         });
         const data = await response.json(); // Parse the JSON response
         console.log(data);
-        if (data.status === 'success' && data.data[0].id) {
+        if (data.status === 'success' && data.id) {
           // this.$router.push("/dashboard/register-order", { query: id});
 
           this.$router.push({ 
             name: 'register-order', // Nome da rota
             query: { 
-              id: data.data[0].id, // Parâmetro que você deseja passar
+              id: data.id, // Parâmetro que você deseja passar
             }
           });
           //console.error("Failed to get order ID:", data);

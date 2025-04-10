@@ -221,15 +221,12 @@ export default {
     try {
       this.getCurrentDate();
       // Extract the order ID from the route parameters
-      const orderId = this.$route.query.id;
+      //const orderId = this.$route.query.id;
       this.newOrder.id = this.$route.query.id;
-      if (orderId) {
-        // If there's an order ID, fetch the order data
-        await this.fetchOrderData(orderId);
-      } else {
-        // Otherwise, fetch the base data (status, customer, seller, origin)
-        await this.fetchData();
-      }
+     
+    
+       await this.fetchData();
+      
     } catch (error) {
       console.error("Error in mounted:", error);
     } finally {

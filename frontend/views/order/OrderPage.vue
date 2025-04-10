@@ -102,9 +102,9 @@
   </template>
   
   <script>
-import FinancialData from './components/FinancialData.vue';
-import Interactions from './components/Interactions.vue';
-import OrderInteractionForm from './components/OrderInteractionForm.vue';
+  import FinancialData from './components/FinancialData.vue';
+  import Interactions from './components/Interactions.vue';
+  import OrderInteractionForm from './components/OrderInteractionForm.vue';
 
 
 

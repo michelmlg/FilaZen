@@ -67,7 +67,7 @@ const routes = [
             {
                 path: 'register-order', 
                 name: 'register-order',
-                component: () => loadModule("/frontend/views/RegisterOrder.vue", options),
+                component: () => loadModule("/frontend/views/register_order/RegisterOrderPage.vue", options),
             },
         ]
     }
