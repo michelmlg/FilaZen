@@ -144,6 +144,41 @@ if ($method == 'POST') {
             ]);
             exit;
         }
+
+        if ($inputData['action'] === 'openOrder') {
+            try {
+                // Start a transaction
+                $pdo->beginTransaction();
+
+                $employeeId = Auth::getSession()['user_session']['id'];
+                
+                // Insert a placeholder row to reserve an ID
+                $stmt = $pdo->prepare("INSERT INTO orders (status_id, client_id, employee_id, description, estimated_value, discount, delivery_date, notes, origin_id, created_at, updated_at)
+                VALUES (3, NULL, $employeeId, NULL, NULL, NULL, NULL, NULL, NULL, NOW(), NOW())");
+                $stmt->execute();
+                
+                // Get the last inserted ID
+                $reservedId = $pdo->lastInsertId();
+                
+                // Commit the transaction
+                $pdo->commit();
+                
+                echo json_encode([
+                    "status" => "success",
+                    "id" => $reservedId
+                ]);
+                exit;
+            } catch (Exception $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Failed to reserve order ID: " . $e->getMessage()
+                ]);
+                exit;
+            }
+        }
         
 
 
