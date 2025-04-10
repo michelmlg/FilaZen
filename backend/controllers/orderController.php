@@ -52,16 +52,36 @@ if ($method == 'GET') {
                 "orders" => $origin_list,
                 "user_id" => $session['user_session']['id']
             ]);
-        } 
-
-
+        }
 
         else {
-            $orders = Order::getAllOrders($pdo);
-            echo json_encode(["status" => "success", "data" => $orders]);
-        }
+            $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+            $perPage = isset($_GET['perPage']) ? (int) $_GET['perPage'] : 10;
+            $search = $_GET['search'] ?? null;
+            $search = ($search === 'null' || $search === '') ? null : $search;
+
+            $totalItems = Order::countAllOrders($search);
+            
+            $totalPages = ceil($totalItems / $perPage);
+
+            $orders = Order::getAllOrders($page, $perPage, $search);       
+
+            $pagination = [
+                "current_page" => $page,
+                "per_page" => $perPage,
+                "total_pages" => $totalPages,
+                "total_items" => $totalItems
+            ];
+
+            echo json_encode([
+                "status" => "success",
+                "pagination" => $pagination,
+                "orders" => $orders
+            ]);
+        } 
+
     } catch (Exception $e) {
-        echo json_encode(["status" => "error", "message" => "Erro ao processar requisição: " . $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Erro ao processar requisição: " . $e]);
     } finally {
         $pdo = null;
     }

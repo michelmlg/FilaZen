@@ -1,4 +1,5 @@
 <?php
+// namespace Backend\Models;
 
 class Order {
     private $id;
@@ -77,15 +78,70 @@ class Order {
         }
     }
 
-    public static function getAllOrders($pdo) {
-        try {
-            $stmt = $pdo->query("SELECT * FROM orders");
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            error_log("Error getting all orders: " . $e->getMessage());
-            return [];
+    public static function getAllOrders($page = 1, $perPage = 10, $search = null)
+    {
+        $offset = ($page - 1) * $perPage;
+        $pdo = getConnection();
+
+        $query = "SELECT o.id as order_id, os.name as status, c.name as client_name, oo.name as origin, 
+                        u.full_name as seller_name, o.description, o.estimated_value, 
+                        o.discount, o.created_at, o.delivery_date
+                FROM orders o
+                INNER JOIN order_status os ON o.status_id = os.id
+                INNER JOIN order_origin oo ON o.origin_id = oo.id
+                INNER JOIN client c ON o.client_id = c.id
+                INNER JOIN user u ON o.employee_id = u.id";
+
+        if (!empty($search)) {
+            $query .= " WHERE c.name LIKE :search 
+                        OR u.full_name LIKE :search 
+                        OR o.description LIKE :search";
         }
+
+        $query .= " ORDER BY o.created_at DESC 
+                    LIMIT :limit OFFSET :offset";
+
+        $stmt = $pdo->prepare($query);
+
+        if (!empty($search)) {
+            $stmt->bindValue(':search', '%' . $search . '%', PDO::PARAM_STR);
+        }
+
+        $stmt->bindValue(':limit', (int) $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', (int) $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+
+    public static function countAllOrders($search = null)
+    {
+        $pdo = getConnection();
+
+        $query = "SELECT COUNT(*) as total
+                FROM orders o
+                INNER JOIN order_status os ON o.status_id = os.id
+                INNER JOIN order_origin oo ON o.origin_id = oo.id
+                INNER JOIN client c ON o.client_id = c.id
+                INNER JOIN user u ON o.employee_id = u.id";
+
+        if (!empty($search)) {
+            $query .= " WHERE c.name LIKE :search 
+                        OR u.full_name LIKE :search 
+                        OR o.description LIKE :search";
+        }
+
+        $stmt = $pdo->prepare($query);
+
+        if (!empty($search)) {
+            $stmt->bindValue(':search', '%' . $search . '%', PDO::PARAM_STR);
+        }
+
+        $stmt->execute();
+        return (int) $stmt->fetchColumn();
+    }
+
 
     public static function getAllOrderStatuses($pdo) {
         try {
