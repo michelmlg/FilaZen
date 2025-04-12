@@ -236,10 +236,10 @@ class Order {
                     o.delivery_date as delivery_date,
                     o.notes as notes
                 FROM orders o
-                INNER JOIN client c ON c.id = o.client_id
-                INNER JOIN user u ON u.id = o.employee_id
-                INNER JOIN order_status os ON os.id = o.status_id
-                INNER JOIN order_origin oo ON oo.id = o.origin_id
+                LEFT JOIN client c ON c.id = o.client_id
+                LEFT JOIN user u ON u.id = o.employee_id
+                LEFT JOIN order_status os ON os.id = o.status_id
+                LEFT JOIN order_origin oo ON oo.id = o.origin_id
                 WHERE o.employee_id = :employee_id AND o.status_id != 4 ORDER BY o.created_at DESC";
         
         $stmt = $pdo->prepare($sql);

@@ -1,6 +1,7 @@
 <?php
 include('../database/connection.php');
 include_once('../models/Auth.php');
+include_once('../models/User.php');
 include_once('../models/Order.php');
 
 header("Access-Control-Allow-Origin: *");
@@ -182,10 +183,14 @@ if ($method == 'POST') {
                 
                 // Commit the transaction
                 $pdo->commit();
+
+                User::changeStatus($pdo, $employeeId, 6);
                 
                 echo json_encode([
                     "status" => "success",
-                    "id" => $reservedId
+                    "id" => $reservedId,
+                    "user_status" => User::getStatus($pdo, $employeeId),
+                    "message" => "Pedido reservado com sucesso. ID: $reservedId"
                 ]);
                 exit;
             } catch (Exception $e) {

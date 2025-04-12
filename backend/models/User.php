@@ -165,6 +165,13 @@ class User {
         }
     }
 
+    public static function getStatus($pdo, $user_id) {
+        $stmt = $pdo->prepare("SELECT status_id FROM user_status WHERE user_id = :user_id");
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     // Email Verification
     public static function generateVerificationToken($user_id) {
         $token = bin2hex(random_bytes(16)); 
