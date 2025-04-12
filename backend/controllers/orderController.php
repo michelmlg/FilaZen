@@ -1,6 +1,7 @@
 <?php
 include('../database/connection.php');
 include_once('../models/Auth.php');
+include_once('../models/User.php');
 include_once('../models/Order.php');
 
 header("Access-Control-Allow-Origin: *");
@@ -52,16 +53,36 @@ if ($method == 'GET') {
                 "orders" => $origin_list,
                 "user_id" => $session['user_session']['id']
             ]);
-        } 
-
-
+        }
 
         else {
-            $orders = Order::getAllOrders($pdo);
-            echo json_encode(["status" => "success", "data" => $orders]);
-        }
+            $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+            $perPage = isset($_GET['perPage']) ? (int) $_GET['perPage'] : 10;
+            $search = $_GET['search'] ?? null;
+            $search = ($search === 'null' || $search === '') ? null : $search;
+
+            $totalItems = Order::countAllOrders($search);
+            
+            $totalPages = ceil($totalItems / $perPage);
+
+            $orders = Order::getAllOrders($page, $perPage, $search);       
+
+            $pagination = [
+                "current_page" => $page,
+                "per_page" => $perPage,
+                "total_pages" => $totalPages,
+                "total_items" => $totalItems
+            ];
+
+            echo json_encode([
+                "status" => "success",
+                "pagination" => $pagination,
+                "orders" => $orders
+            ]);
+        } 
+
     } catch (Exception $e) {
-        echo json_encode(["status" => "error", "message" => "Erro ao processar requisição: " . $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Erro ao processar requisição: " . $e]);
     } finally {
         $pdo = null;
     }
@@ -144,10 +165,49 @@ if ($method == 'POST') {
             ]);
             exit;
         }
+
+        if ($inputData['action'] === 'openOrder') {
+            try {
+                // Start a transaction
+                $pdo->beginTransaction();
+
+                $employeeId = Auth::getSession()['user_session']['id'];
+                
+                // Insert a placeholder row to reserve an ID
+                $stmt = $pdo->prepare("INSERT INTO orders (status_id, client_id, employee_id, description, estimated_value, discount, delivery_date, notes, origin_id, created_at, updated_at)
+                VALUES (3, NULL, $employeeId, NULL, NULL, NULL, NULL, NULL, 1, NOW(), NOW())");
+                $stmt->execute();
+                
+                // Get the last inserted ID
+                $reservedId = $pdo->lastInsertId();
+                
+                // Commit the transaction
+                $pdo->commit();
+
+                User::changeStatus($pdo, $employeeId, 6);
+                
+                echo json_encode([
+                    "status" => "success",
+                    "id" => $reservedId,
+                    "user_status" => User::getStatus($pdo, $employeeId),
+                    "message" => "Pedido reservado com sucesso. ID: $reservedId"
+                ]);
+                exit;
+            } catch (Exception $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Failed to reserve order ID: " . $e->getMessage()
+                ]);
+                exit;
+            }
+        }
         
 
 
-        if($inputData['action'] === 'createOrder'){
+        if($inputData['action'] === 'updateOrder'){
               // Validate required fields
               $required = ['id', 'client_id', 'status_id', 'employee_id']; // Include 'id' as required    
               foreach ($required as $field) {
@@ -161,10 +221,11 @@ if ($method == 'POST') {
   
               // Update the order
               $order = new Order(
+                  $inputData['id'],
                   $inputData['status_id'],
                   $inputData['client_id'],
                   $inputData['employee_id'],
-                  $inputData['description'] ?? '',
+                  $inputData['description'],
                   $inputData['origin_id'] ?? 1,
                   $inputData['estimated_value'] ?? 0,
                   $inputData['discount'] ?? 0,
@@ -172,13 +233,14 @@ if ($method == 'POST') {
                   $inputData['notes'] ?? null
               );
   
-              $updated = $order->update($pdo, $orderId); // Call the update method
+              $updated = $order->update($pdo); // Call the update method
   
               if ($updated) {
                   echo json_encode([
                       "status" => "success",
                       "id" => $orderId,
-                      "message" => "Order updated successfully"
+                      "message" => "Order updated successfully",
+                      "order" => json_encode($order)
                   ]);
               }
   

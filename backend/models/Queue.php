@@ -1,4 +1,5 @@
 <?php
+// namespace Filazen\Backend\Models;
 
 class Queue {
     private $queue = [];

@@ -9,7 +9,7 @@ export default {
       statusOptions: [],
       userStatus: null,
       links: [
-        { text: "Minha Fila", url: "#/dashboard/queue" },
+        { text: "Fila", url: "#/dashboard/queue" },
         { text: "Pedidos", url: "#/dashboard/orders" },
         { text: "Clientes", url: "#/dashboard/clients" },
         { text: "Regras", url: "#/dashboard/rules" },

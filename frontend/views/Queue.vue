@@ -57,22 +57,25 @@ export default {
     },
     async redirectToNewOrder() {
       if (this.isUserFirst) {
-        const response = await fetch("/backend/controllers/orderController.php?action=open_order", {
-          method: "GET",
+        const response = await fetch("/backend/controllers/orderController.php", {
+          method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
+          body: JSON.stringify({
+            action: "openOrder",
+          }),
           credentials: "include"
         });
         const data = await response.json(); // Parse the JSON response
         console.log(data);
-        if (data.status === 'success' && data.data[0].id) {
+        if (data.status === 'success' && data.id) {
           // this.$router.push("/dashboard/register-order", { query: id});
 
           this.$router.push({ 
             name: 'register-order', // Nome da rota
             query: { 
-              id: data.data[0].id, // Parâmetro que você deseja passar
+              id: data.id, // Parâmetro que você deseja passar
             }
           });
           //console.error("Failed to get order ID:", data);
@@ -208,40 +211,40 @@ export default {
               <h3>Meus pedidos</h3>
             </div>
             
-            <div class="card-body overflow-auto" style="max-height: 400px;">
-              <div v-if="ordersIsLoading" class="text-center">
-            <p>Carregando pedidos...</p>
-          </div>
-          <table v-else class="table table-striped table-hover overflow-auto">
-            <thead>
-              <tr>
-                <th><i class="fa-solid fa-ticket"></i> Ticket</th>
-                <th>Status</th>
-                <th>Cliente</th>
-                <th>Data abertura</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="!orders || orders.length === 0">
-                <td colspan="4" class="text-center">Nenhum pedido encontrado.</td>
-              </tr>
-              <tr v-else v-for="order in orders" :key="order.id" class="order" @click="viewOrder(order.id)">
-                <td>
-                    <span class="badge bg-primary">#{{ order.id }}</span>
-                </td>
-                <td>
-                  <span :class="getStatusClass(order.status)">
-                    {{ order.status }}
-                  </span>
-                </td>
-                <td>{{ order.client_name }}</td>
-                <td>  
-                  <span class="text-success">{{ formatDate(order.created_at) }}</span> - {{ calcDaysOpen(order.created_at, currentDate) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-            </div>
+            <div class="card-body" style="max-height: 400px;">
+  <div v-if="ordersIsLoading" class="text-center">
+    <p>Carregando pedidos...</p>
+  </div>
+  <table v-else class="table table-striped table-hover m-0">
+    <thead style="position: sticky; top: 0; background-color: white; z-index: 1;">
+      <tr>
+        <th><i class="fa-solid fa-ticket"></i> Ticket</th>
+        <th>Status</th>
+        <th>Cliente</th>
+        <th>Data abertura</th>
+      </tr>
+    </thead>
+  </table>
+  <!-- Scroll aqui -->
+  <div style="max-height: 300px; overflow-y: auto;">
+    <table class="table table-striped table-hover m-0">
+      <tbody>
+        <tr v-if="!orders || orders.length === 0">
+          <td colspan="4" class="text-center">Nenhum pedido encontrado.</td>
+        </tr>
+        <tr v-else v-for="order in orders" :key="order.id" class="order" @click="viewOrder(order.id)">
+          <td><span class="badge bg-primary">#{{ order.id }}</span></td>
+          <td><span :class="getStatusClass(order.status)">{{ order.status }}</span></td>
+          <td>{{ order.client_name }}</td>
+          <td>
+            <span class="text-success">{{ formatDate(order.created_at) }}</span> - {{ calcDaysOpen(order.created_at, currentDate) }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
           </div>
         </div>
       </div>

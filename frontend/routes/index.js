@@ -49,7 +49,7 @@ const routes = [
             },
             {
                 path: 'orders', 
-                component: () => loadModule("/frontend/views/Orders.vue", options),
+                component: () => loadModule("/frontend/views/order_history/OrderHistoryPage.vue", options),
             },
             {
                 path: 'order/:id', 
@@ -58,7 +58,7 @@ const routes = [
             },
             {
                 path: 'clients', 
-                component: () => loadModule("/frontend/views/Clients.vue", options),
+                component: () => loadModule("/frontend/views/client_list/ClientListPage.vue", options),
             },
             {
                 path: 'rules', 
@@ -67,7 +67,7 @@ const routes = [
             {
                 path: 'register-order', 
                 name: 'register-order',
-                component: () => loadModule("/frontend/views/RegisterOrder.vue", options),
+                component: () => loadModule("/frontend/views/register_order/RegisterOrderPage.vue", options),
             },
         ]
     }

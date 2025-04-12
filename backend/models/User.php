@@ -1,4 +1,8 @@
 <?php
+// namespace FilaZen\Backend\models;
+
+// use PDO;
+
 class User {
     private $id;
     private $username;
@@ -159,6 +163,13 @@ class User {
         }else{
             return false;
         }
+    }
+
+    public static function getStatus($pdo, $user_id) {
+        $stmt = $pdo->prepare("SELECT status_id FROM user_status WHERE user_id = :user_id");
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     // Email Verification

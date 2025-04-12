@@ -30,8 +30,14 @@ RUN echo "Alias /phpmyadmin /usr/share/phpmyadmin" >> /etc/apache2/conf-availabl
     && echo "</Directory>" >> /etc/apache2/conf-available/phpmyadmin.conf \
     && a2enconf phpmyadmin
 
+    
 EXPOSE 80
 
 COPY . /var/www/html/
 
-CMD ["apache2-foreground"]
+# WORKDIR /var/www/html
+
+# RUN composer install
+# RUN composer dump-autoload
+    
+#CMD ["apache2-foreground"]

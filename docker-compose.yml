@@ -5,7 +5,9 @@ services:
     build: .
     container_name: web-apache
     volumes:
-      - ./:/var/www/html/
+      - .:/var/www/html
+    command: >
+      sh -c "composer install && composer dump-autoload && apache2-foreground"
     env_file:
       - .env
     ports:

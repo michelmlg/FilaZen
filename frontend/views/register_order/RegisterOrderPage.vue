@@ -1,5 +1,5 @@
 <script>
-import RegisterForm from '../Components/order/OrderForm.vue';
+import RegisterForm from './components/OrderForm.vue';
 export default {
   name: "Register",
   components: { RegisterForm }
