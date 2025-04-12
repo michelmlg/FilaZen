@@ -174,7 +174,7 @@ if ($method == 'POST') {
                 
                 // Insert a placeholder row to reserve an ID
                 $stmt = $pdo->prepare("INSERT INTO orders (status_id, client_id, employee_id, description, estimated_value, discount, delivery_date, notes, origin_id, created_at, updated_at)
-                VALUES (3, NULL, $employeeId, NULL, NULL, NULL, NULL, NULL, NULL, NOW(), NOW())");
+                VALUES (3, NULL, $employeeId, NULL, NULL, NULL, NULL, NULL, 1, NOW(), NOW())");
                 $stmt->execute();
                 
                 // Get the last inserted ID
@@ -202,7 +202,7 @@ if ($method == 'POST') {
         
 
 
-        if($inputData['action'] === 'createOrder'){
+        if($inputData['action'] === 'updateOrder'){
               // Validate required fields
               $required = ['id', 'client_id', 'status_id', 'employee_id']; // Include 'id' as required    
               foreach ($required as $field) {
@@ -216,10 +216,11 @@ if ($method == 'POST') {
   
               // Update the order
               $order = new Order(
+                  $inputData['id'],
                   $inputData['status_id'],
                   $inputData['client_id'],
                   $inputData['employee_id'],
-                  $inputData['description'] ?? '',
+                  $inputData['description'],
                   $inputData['origin_id'] ?? 1,
                   $inputData['estimated_value'] ?? 0,
                   $inputData['discount'] ?? 0,
@@ -227,13 +228,14 @@ if ($method == 'POST') {
                   $inputData['notes'] ?? null
               );
   
-              $updated = $order->update($pdo, $orderId); // Call the update method
+              $updated = $order->update($pdo); // Call the update method
   
               if ($updated) {
                   echo json_encode([
                       "status" => "success",
                       "id" => $orderId,
-                      "message" => "Order updated successfully"
+                      "message" => "Order updated successfully",
+                      "order" => json_encode($order)
                   ]);
               }
   

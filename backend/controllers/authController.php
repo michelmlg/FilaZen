@@ -1,4 +1,8 @@
 <?php
+// require_once __DIR__ . '../../../vendor/autoload.php';
+// use Filazen\Backend\models\Auth;
+
+require_once('../models/Auth.php');
 include('../database/connection.php');
 include_once('../models/Auth.php');
 

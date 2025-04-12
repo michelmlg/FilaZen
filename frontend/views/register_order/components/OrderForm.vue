@@ -244,9 +244,9 @@ export default {
 
       // Include only necessary fields, including the ID
       const dataToSend = {
-        action: "createOrder",
+        action: "updateOrder",
         id: this.newOrder.id, // Include the order ID
-        client_id: this.selectedCustomer,
+        client_id: parseInt(this.selectedCustomer),
         status_id: this.selectedStatus,
         employee_id: this.selectedSeller,
         origin_id: this.selectedOrigin,

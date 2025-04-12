@@ -5,30 +5,45 @@ export default {
   name: "Orders",
   components: {OrderHistory},
   methods: {
-    async fetchOrders() {
+    async fetchOrders(page = 1, search = '', perPage = 10) {
+      this.isLoading = true;
+
       try {
-        const response = await fetch(`${this.apiUrl}?limit=${this.table.limit}&page=${this.table.page}&search=${this.table.search}`);
-        const result = await response.json();
-        
-        console.log(result);
-        if(result.status == "success"){
-          this.table.orders = result.data;
+        const params = new URLSearchParams({
+          page: page,
+          perPage: perPage,
+          search: search
+        });
+
+        const response = await fetch(`/backend/controllers/orderController.php?${params.toString()}`);
+        const data = await response.json();
+
+        if (data.status === 'success') {
+
+          console.log(data.orders);
+          this.table.orders = data.orders;
+          const pagination = data.pagination;
+
+          this.table.pagination.totalPages = pagination.total_pages;
+          this.table.pagination.totalItems = pagination.total_items;
+          this.table.pagination.perPage = pagination.per_page;
+          this.table.pagination.currentPage = pagination.current_page;
           this.table.isLoading = false;
-          //this.table.totalPages = result.totalPages;
-        }else{
-          console.error("Erro ao buscar os dados dos pedidos:", result.message);
+        } else {
+          this.table.orders = [];
+          alert(result.message || 'Erro ao buscar pedidos');
         }
-        
       } catch (error) {
-        console.error("Ocorreu um erro ao receber os pedidos: ", error);
+        console.error('Erro na requisição:', error);
+        alert('Erro ao buscar pedidos');
       }
     },
     async changePage(page) {
-      if (page < 1 || page > this.table.totalPages) {
+      if (page < 1 || page > this.table.pagination.totalPages) {
         return;
       }
-      this.table.page = page;
-      await this.fetchOrders();
+      this.table.pagination.currentPage = page;
+      await this.fetchOrders(this.table.pagination.currentPage, this.table.pagination.search, this.table.pagination.perPage);
     },
     openOrderHistory(order) {
       this.updateModal.order = order;
@@ -104,14 +119,16 @@ export default {
   },
   data() {
     return {
-      apiUrl: "/backend/controllers/orderHistoryController.php",
       table: {
-        page: 1,
-        limit: 10,
-        search: '',
+        pagination:{
+          currentPage: 1,
+          totalPages: 0,
+          totalItems: 0,
+          perPage: 10,
+          search: '',
+        },
         orders: [],
         perPageOptions: [10, 25, 50, 100, 200],
-        totalPages: 0,
         isLoading: true,
       },
       headers: [
@@ -126,7 +143,6 @@ export default {
   },
   async mounted() {
     await this.fetchOrders();
-    console.log("Orders:", this.table.orders);
   }
 };
 </script>
@@ -141,26 +157,26 @@ export default {
       <div class="card-body">
         
         <div class="d-flex justify-content-end align-items-center flex-nowrap mb-4">
-          <select class="btn border rounded me-2" v-model="table.limit" @change="changePage(1)" style="border-color: var(--secondaryVue) !important; color: var(--secondaryVue) !important;">
+          <select class="btn border rounded me-2" v-model="table.pagination.perPage" @change="changePage(1)" style="border-color: var(--secondaryVue) !important; color: var(--secondaryVue) !important;">
             <option v-for="option in table.perPageOptions" :key="option" :value="option">
               {{ option }}
             </option>
           </select>
-          <button class="btn btn-outline-secondary me-2" @click="changePage(table.page)"><i class="fa fa-rotate-right"></i></button>
+          <button class="btn btn-outline-secondary me-2" @click="changePage(table.pagination.currentPage)"><i class="fa fa-rotate-right"></i></button>
           <div class="input-group me-2" style="max-width: 200px;">
-            <input type="text" class="form-control" v-model="table.search" placeholder="Buscar...">
+            <input type="text" class="form-control" v-model="table.pagination.search" placeholder="Buscar...">
             <button class="btn btn-outline-secondary" type="button" @click="changePage(table.page)"><i class="fa fa-search"></i></button>
           </div>
 
           <div class="btn-group me-2" role="group" aria-label="First group">
-            <button type="button" :disabled="table.page === 1" class="btn btn-outline-secondary" @click="changePage(1)">
+            <button type="button" :disabled="table.pagination.currentPage === 1" class="btn btn-outline-secondary" @click="changePage(1)">
               <i class="fa-solid fa-angles-left"></i>
             </button>
-            <button type="button" :disabled="table.page === 1" class="btn btn-outline-secondary" @click="changePage(table.page - 1)">
+            <button type="button" :disabled="table.pagination.currentPage === 1" class="btn btn-outline-secondary" @click="changePage(table.pagination.currentPage - 1)">
               <i class="fa-solid fa-angle-left"></i>
             </button>
-            <div type="text" class="btn btn-outline-secondary">{{ table.page }}</div>
-            <button type="button" :disabled="table.page >= table.totalPages" class="btn btn-outline-secondary" @click="changePage(table.page + 1)">
+            <div type="text" class="btn btn-outline-secondary">{{ table.pagination.currentPage }}</div>
+            <button type="button" :disabled="table.pagination.currentPage >= table.pagination.totalPages" class="btn btn-outline-secondary" @click="changePage(table.pagination.currentPage + 1)">
               <i class="fa-solid fa-angle-right"></i>
             </button>
           </div>
@@ -211,7 +227,7 @@ export default {
                   </div>
                 </td>
               </tr>
-              <tr v-else v-for="(order, index) in table.orders" :key="order.id">
+              <tr v-else v-for="(order, index) in table.orders" :key="order.order_id">
                 <td>
                   <span class="bg-secondary fw-bold rounded ps-2 pe-2 text-light">
                     #{{ order.order_id }}
@@ -237,7 +253,7 @@ export default {
           </table>
           <div class="table-footer">
             <small>
-              Página {{ table.page }} de {{ table.totalPages }}
+              Página {{ table.pagination.currentPage }} de {{ table.pagination.totalPages }}
             </small>
           </div>
         </div>

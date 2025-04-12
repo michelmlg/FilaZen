@@ -16,6 +16,7 @@ class Order {
     private $updated_at;
 
     public function __construct(
+        $order_id,
         $status_id,
         $client_id,
         $employee_id,
@@ -26,6 +27,7 @@ class Order {
         $delivery_date,
         $notes
     ) {
+        $this->id = $order_id ?? null;
         $this->status_id = $status_id;
         $this->client_id = $client_id;
         $this->employee_id = $employee_id;
@@ -238,7 +240,7 @@ class Order {
                 INNER JOIN user u ON u.id = o.employee_id
                 INNER JOIN order_status os ON os.id = o.status_id
                 INNER JOIN order_origin oo ON oo.id = o.origin_id
-                WHERE o.employee_id = :employee_id AND o.status_id != 4";
+                WHERE o.employee_id = :employee_id AND o.status_id != 4 ORDER BY o.created_at DESC";
         
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':employee_id', $employee_id, PDO::PARAM_INT);

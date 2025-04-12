@@ -22,7 +22,7 @@
             <h5 class="mb-0">Classificação do Pedido</h5>
         </div>
         <div class="card-body p-3 rounded-bottom">
-            <form class="order-form">
+            <form class="order-form" @submit.prevent="updateOrder">
                 <!-- Delivery Date -->
                 <div class="row mb-4">
                     <!-- Status -->
@@ -267,7 +267,49 @@
           } catch (error) {
             console.error("Erro:", error);
           }
+        },
+        async updateOrder() {
+          const payload = {
+            action: "updateOrder",
+            id: this.order.id,
+            status_id: this.selectedStatus,
+            client_id: this.selectedCustomer,
+            employee_id: this.selectedSeller,
+            origin_id: this.selectedOrigin,
+            estimated_value: this.order.estimated_value,
+            discount: this.order.discount,
+            delivery_date: this.order.delivery_date,
+            notes: this.orderData.notes,
+            description: this.orderData.description
+          };
+
+          try {
+            const response = await fetch("/backend/controllers/orderController.php", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              throw new Error("Erro ao atualizar pedido!");
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert("Pedido atualizado com sucesso!");
+            } else {
+              alert("Erro: " + result.message);
+            }
+
+          } catch (error) {
+            console.error("Erro ao atualizar pedido:", error);
+            alert("Erro ao atualizar o pedido. Verifique o console.");
+          }
         }
+
     }
   };
   </script>

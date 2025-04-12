@@ -1,4 +1,8 @@
 <?php
+// namespace FilaZen\Backend\models;
+
+// use PDO;
+
 class User {
     private $id;
     private $username;
