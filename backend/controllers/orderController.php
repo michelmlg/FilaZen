@@ -119,7 +119,7 @@ if ($method == 'POST') {
             $interactions = Order::getInteractions($pdo, $inputData['order_id']);
             echo json_encode([
                 "status" => "success",
-                "interactions" => $interactions ?: "Esse pedido não possui interações!",
+                "interactions" => $interactions,
                 "empty_list" => empty($interactions)
             ]);
             exit;
