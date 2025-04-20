@@ -1,4 +1,6 @@
 <?php
+namespace Backend\Models;
+
 class Client {
     private $id;
     private $cpf;

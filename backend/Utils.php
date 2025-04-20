@@ -1,4 +1,5 @@
 <?php
+namespace Filazen\Backend;
 
 public static function vSessao(){
     if (!empty($_SESSION)) {

@@ -1,8 +1,13 @@
 <?php
-include('../database/connection.php');
-include_once('../models/Auth.php');
-include_once('../models/User.php');
-include_once('../models/Queue.php');
+require_once __DIR__ . '../../../vendor/autoload.php';
+use Filazen\Backend\models\Auth;
+use Filazen\Backend\Database\db;
+use Filazen\Backend\models\Queue\Queue;
+
+// include('../database/connection.php');
+// include_once('../models/Auth.php');
+// include_once('../models/User.php');
+// include_once('../models/Queue.php');
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, DELETE");
@@ -30,7 +35,7 @@ $queue = new Queue();
 
 if($method == 'GET'){
     try{
-        $pdo = getConnection();
+        $pdo = db::getConnection();
 
         $queue->populateQueueFromDatabase($pdo);
 

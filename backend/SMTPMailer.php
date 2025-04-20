@@ -1,6 +1,6 @@
 <?php
 require_once('../../vendor/autoload.php');
-
+namespace Filazen\Backend;
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;

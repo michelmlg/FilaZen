@@ -1,5 +1,6 @@
 <?php
-// namespace Backend\Models;
+namespace Filazen\Backend\Models;
+use PDO;
 
 class Order {
     private $id;
@@ -80,10 +81,9 @@ class Order {
         }
     }
 
-    public static function getAllOrders($page = 1, $perPage = 10, $search = null)
+    public static function getAllOrders($pdo, $page = 1, $perPage = 10, $search = null)
     {
         $offset = ($page - 1) * $perPage;
-        $pdo = getConnection();
 
         $query = "SELECT o.id as order_id, os.name as status, c.name as client_name, oo.name as origin, 
                         u.full_name as seller_name, o.description, o.estimated_value, 
@@ -117,9 +117,8 @@ class Order {
     }
 
 
-    public static function countAllOrders($search = null)
+    public static function countAllOrders($pdo, $search = null)
     {
-        $pdo = getConnection();
 
         $query = "SELECT COUNT(*) as total
                 FROM orders o

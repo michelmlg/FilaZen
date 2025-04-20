@@ -1,9 +1,9 @@
 <?php
-// namespace Filazen\Backend\models;
+namespace Filazen\Backend\models;
 
 // require_once __DIR__ . '../../../vendor/autoload.php';
 
-// use Filazen\Backend\models\User;
+use Filazen\Backend\models\User;
 
 
 include_once('User.php');
