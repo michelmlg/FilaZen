@@ -1,5 +1,7 @@
 <?php
-namespace Backend\Models;
+namespace Filazen\Backend\Models;
+use PDO;
+use PDOException;
 
 class Client {
     private $id;

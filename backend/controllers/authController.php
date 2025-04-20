@@ -16,7 +16,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $inputData = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 
 if($method == 'GET'){
-    if(!$_SESSION){
+    if(!Auth::getSession()){
         echo json_encode(["status" => "error", "message" => "Essa rota é protegida, faça login para acessá-la.", "authenticated" => false]);
         exit;
     }
