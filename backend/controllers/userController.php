@@ -27,7 +27,7 @@ if ($method == 'GET') {
         exit;
     }
     try {
-        $pdo = getConnection();
+        $pdo = db::getConnection();
 
         $users = User::getAllUsers($pdo);
 
@@ -49,7 +49,7 @@ if ($method == 'GET') {
 
 if ($method == 'POST') {
     try {
-        $pdo = getConnection();
+        $pdo = db::getConnection();
         
         if (!isset($inputData['username'],$inputData['email'] ,$inputData['full_name'], $inputData['password'])) {
             echo json_encode(["status" => "error", "message" => "Campos obrigatórios ausentes", "campos" => $inputData]);
