@@ -1,11 +1,18 @@
-FROM php:7.3-apache
+FROM php:8.2-apache
+#FROM php:7.3-apache
 
 RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev libxpm-dev
 
-RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/freetype2 --with-jpeg-dir=/usr/include \
+# RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/freetype2 --with-jpeg-dir=/usr/include \
+#     && docker-php-ext-install mysqli pdo pdo_mysql gd
+RUN docker-php-ext-configure gd \
     && docker-php-ext-install mysqli pdo pdo_mysql gd
 
+
 RUN apt-get update && apt-get install -y default-mysql-client
+
+RUN apt-get update && \
+    apt-get install -y cron
 
 RUN a2enmod rewrite
 
@@ -35,9 +42,15 @@ EXPOSE 80
 
 COPY . /var/www/html/
 
-# WORKDIR /var/www/html
+# Criar o arquivo de crontab diretamente no container php vendor/bin/crunz schedule:run --source=/var/www/html/backend/console/Kernel.php
+#RUN echo "* * * * * cd /var/www/html && php /var/www/html/vendor/bin/crunz schedule:run >> /var/log/crunz.log 2>&1" > /etc/cron.d/crunz
+#RUN echo "* * * * * cd /var/www/html && /usr/local/bin/php /var/www/html/vendor/bin/crunz schedule:run --tasks=--tasks=Filazen\\Backend\\console\\Kernel" > /etc/cron.d/crunz && echo '' >> /etc/cron.d/crunz
+RUN echo "* * * * * cd /var/www/html && /usr/local/bin/php /var/www/html/vendor/bin/crunz schedule:run /var/www/html/backend/tasks" > /etc/cron.d/crunz
 
-# RUN composer install
-# RUN composer dump-autoload
-    
-#CMD ["apache2-foreground"]
+# Garantir as permissões corretas para o arquivo de crontab
+RUN chmod 0644 /etc/cron.d/crunz
+
+# Adicionar o crontab
+RUN crontab /etc/cron.d/crunz
+
+

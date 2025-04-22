@@ -1,0 +1,5 @@
+source: var/www/html/backend/tasks
+timezone: America/Sao_Paulo
+suffix: Task.php
+log_output: true
+output_log_file: /var/log/crunz.log
