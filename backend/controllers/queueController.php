@@ -31,37 +31,47 @@ if(!Auth::getSession()){
 
 // Definindo a Fila;
 $queue = new Queue();
+$pdo = db::getConnection();
 
-
-if($method == 'GET'){
-    try{
-        $pdo = db::getConnection();
-
-        $queue->populateQueueFromDatabase($pdo);
-
-        if($queue != null){
-            echo json_encode(["status" => "success", "message" => "fila retornada com sucesso.", "queue" => $queue->getQueue()]);
-        } else {
-            echo json_encode(["status" => "success", "message" => "A fila está vazia."]);
-        }
-    }catch(PDOException $e){
-        echo json_encode(["status" => "error", "message" => "Ocorreu um erro ao retornar fila " . $e.getMessage()]);
-    }finally{
+if ($method == 'GET' && !isset($_GET['peek']) && !isset($_GET['list']) && !isset($_GET['size'])) {
+    try {
+        $queue->loadQueueFromDatabase($pdo);
+        echo json_encode(["status" => "success", "message" => "Fila retornada com sucesso.", "queue" => $queue->getQueue()]);
+    } catch (PDOException $e) {
+        echo json_encode(["status" => "error", "message" => "Erro ao retornar fila: " . $e->getMessage()]);
+    } finally {
         $pdo = null;
     }
     exit;
 }
 
+
 // Adicionar usuário manualmente
-if ($method == 'POST') {
-
-    if (!isset($inputData['id']) || !isset($inputData['name'])) {
-        echo json_encode(["status" => "error", "message" => "Parâmetros incompletos"]);
-        exit;
+if ($method == 'POST' && isset($inputData['id']) && isset($inputData['name'])) {
+    try {
+        $queue->loadQueueFromDatabase($pdo);
+        $queue->enqueue([
+            "id" => $inputData['id'],
+            "full_name" => $inputData['name'],
+            "img_path" => $inputData['img_path'] ?? null,
+            "updated_at" => date('Y-m-d H:i:s')
+        ]);
+        $queue->persistQueueToDatabase($pdo);
+        echo json_encode(["status" => "success", "message" => "Usuário adicionado à fila."]);
+    } catch (Exception $e) {
+        echo json_encode(["status" => "error", "message" => "Erro ao adicionar usuário: " . $e->getMessage()]);
     }
+    exit;
+}
 
-    $queue->enqueue(["id" => $inputData['id'], "name" => $inputData['name']]);
-    echo json_encode(["status" => "success", "message" => "Usuário adicionado à fila"]);
+if ($method === 'POST' && isset($inputData['populate'])) {
+    try {
+        $queue->loadQueueFromDatabase($pdo);
+        $queue->populateQueueFromAvailableUsers($pdo);
+        echo json_encode(["status" => "success", "message" => "Fila populada com usuários disponíveis.", "queue" => $queue->getQueue()]);
+    } catch (PDOException $e) {
+        echo json_encode(["status" => "error", "message" => "Erro ao popular fila: " . $e->getMessage()]);
+    }
     exit;
 }
 
