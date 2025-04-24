@@ -12,7 +12,7 @@ class Queue {
 
     public function __construct() {
         $this->queue = []; // Inicializa a fila como um array vazio
-        $this->strategy = new \Filazen\Backend\models\Queue\Strategies\UpdatedAtStrategy;
+        $this->strategy = new \Filazen\Backend\models\Queue\Strategies\PerformanceStrategy(); // Define uma estratégia padrão
     }
     
     public function setStrategy(QueueStrategyInterface $strategy): void {
