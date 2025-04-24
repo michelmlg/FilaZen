@@ -3,11 +3,19 @@ namespace Filazen\Backend\tasks;
 require_once __DIR__ . '../../../vendor/autoload.php';
 
 
-use Crunz\Schedule;
-use Filazen\Backend\database\db;
 use PDO;
 use Exception;
 use PDOException;
+use Dotenv\Dotenv;
+use Crunz\Schedule;
+use Filazen\Backend\database\db;
+
+try {
+    $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
+    $dotenv->load();
+} catch (Exception $e) {
+    echo "[" . date('Y-m-d H:i:s') . "] ERRO AO CARREGAR .env: " . $e->getMessage() . "\n";
+}
 
 $schedule = new Schedule();
 $task = $schedule->run(function () {
@@ -83,7 +91,27 @@ $task = $schedule->run(function () {
         echo "[" . date('Y-m-d H:i:s') . "] ERRO GERAL: " . $e->getMessage() . "\n";
     }
 });
-$task->everyMinute();
+$task->veryTenMinutes(); 
 // $task->dailyAt('23:59');
+
+//
+//$task->everyMinute();              // A cada minuto
+//$task->everyFiveMinutes();        // A cada 5 minutos
+//$task->everyTenMinutes();         // A cada 10 minutos
+//$task->everyFifteenMinutes();     // A cada 15 minutos
+//task->everyThirtyMinutes();      // A cada 30 minutos
+//$task->hourly();                  // A cada hora
+//$task->hourlyAt(15);              // A cada hora, no minuto 15
+
+//$task->daily();                   // Uma vez por dia (meia-noite)
+//$task->dailyAt('14:00');          // Todos os dias às 14:00
+//$task->twiceDaily(1, 13);         // Duas vezes por dia, às 1h e às 13h
+//$task->weekly();                  // Toda semana (domingo meia-noite)
+//$task->weeklyOn(1, '8:30');       // Toda segunda-feira às 8h30
+//$task->monthly();                 // Uma vez por mês (dia 1)
+//$task->monthlyOn(15, '10:00');    // Dia 15 de cada mês às 10h
+//$task->quarterly();               // A cada 3 meses
+//$task->yearly();                  // Uma vez por ano (1º de janeiro)
+
 
 return $schedule;
