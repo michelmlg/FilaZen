@@ -7,9 +7,11 @@ services:
     volumes:
       - .:/var/www/html
     command: >
-      sh -c "composer install && composer dump-autoload && apache2-foreground"
+      sh -c "composer install && composer dump-autoload && service cron start && apache2-foreground"
     env_file:
       - .env
+    environment:
+    - TZ=America/Sao_Paulo
     ports:
       - "80:80"
     platform: linux/amd64

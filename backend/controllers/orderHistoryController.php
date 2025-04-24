@@ -1,6 +1,9 @@
 <?php
-include('../database/connection.php');
-include_once('../models/Auth.php');
+require_once __DIR__ . '../../../vendor/autoload.php';
+use Filazen\Backend\models\Auth;
+use Filazen\Backend\Database\db;
+// include('../database/connection.php');
+// include_once('../models/Auth.php');
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
@@ -29,7 +32,7 @@ if (!Auth::getSession()) {
 // Processamento de requisições com base no método HTTP
 if ($method == 'GET') {
 
-    $pdo = getConnection();
+    $pdo = db::getConnection();
 
     $query = "SELECT o.id as order_id, os.name as status, c.name as client_name, oo.name as origin, u.full_name as seller_name, o.description as description, o.estimated_value, o.discount, o.created_at, o.delivery_date FROM orders as o INNER JOIN order_status as os ON o.status_id = os.id INNER JOIN order_origin as oo ON o.origin_id = oo.id INNER JOIN client c ON o.client_id = c.id INNER JOIN user u ON o.employee_id = u.id;";
     $stmt = $pdo->prepare($query);

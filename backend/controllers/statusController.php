@@ -1,7 +1,13 @@
 <?php
-include('../database/connection.php');
-include_once('../models/Auth.php');
-include_once('../models/User.php');
+
+require_once __DIR__ . '../../../vendor/autoload.php';
+use Filazen\Backend\models\Auth;
+use Filazen\Backend\models\User;
+use Filazen\Backend\Database\db;
+
+// include('../database/connection.php');
+// include_once('../models/Auth.php');
+// include_once('../models/User.php');
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
@@ -26,7 +32,7 @@ if(!Auth::getSession()){
 
 if ($method == 'GET') {
     try {
-        $pdo = getConnection();
+        $pdo = db::getConnection();
 
         $status_list = User::getAllStatus($pdo);
 
@@ -41,7 +47,7 @@ if ($method == 'GET') {
 
 if ($method == 'POST') {
     try {
-        $pdo = getConnection();
+        $pdo = db::getConnection();
 
         if (!isset($inputData['id'])) {
             throw new Exception("ID do usuário não enviado.");
@@ -61,7 +67,7 @@ if ($method == 'POST') {
 
 if ($method == 'PUT') {
     try {
-        $pdo = getConnection();
+        $pdo = db::getConnection();
 
         if (!isset($inputData['id']) || !isset($inputData['new_status'])) {
             throw new Exception("Parâmetros incompletos.");

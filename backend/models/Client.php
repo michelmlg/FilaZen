@@ -1,4 +1,8 @@
 <?php
+namespace Filazen\Backend\Models;
+use PDO;
+use PDOException;
+
 class Client {
     private $id;
     private $cpf;

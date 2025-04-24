@@ -38,18 +38,40 @@ export default {
     },
     async getQueue() {
       try {
-        const response = await fetch('/backend/controllers/queueController.php');
+        const response = await fetch('/backend/controllers/queueController.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ populate: true })
+        });
+
         const data = await response.json();
-        
-        if (data.status === 'success') {
-          if (data.status === 'success' && Array.isArray(data.queue)) {
-            this.usuarios = data.queue;
-            this.isUserFirst = this.usuarios.length > 0 && this.usuarios[0].id+"" == this.userData.id;
-          } else {
-            console.error('Erro: a fila não é um array ou status não é success', data);
-          }
+
+        if (data.status === 'success' && Array.isArray(data.queue)) {
+          this.usuarios = data.queue;
+          this.isUserFirst = this.usuarios.length > 0 && String(this.usuarios[0].id) === String(this.userData.id);
         } else {
-          console.error('Erro ao obter a fila: ', data.message);
+          console.error('Erro: a fila não é um array ou status não é success', data);
+        }
+      } catch (error) {
+        console.error('Erro ao fazer requisição:', error);
+      }
+    },
+    async getUserData() {
+      try {
+        const response = await fetch('/backend/controllers/userController.php?getUserData=true', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+          this.userData = data.userData;
+        } else {
+          console.error('Erro ao obter dados do usuário:', data.message);
         }
       } catch (error) {
         console.error('Erro ao fazer requisição:', error);

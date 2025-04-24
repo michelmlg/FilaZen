@@ -1,8 +1,14 @@
 <?php
-include('../database/connection.php');
-include_once('../models/Auth.php');
-include_once('../models/User.php');
-include_once('../models/Order.php');
+
+require_once __DIR__ . '../../../vendor/autoload.php';
+use Filazen\Backend\models\Auth;
+use Filazen\Backend\Database\db;
+use Filazen\Backend\models\Order;
+use Filazen\Backend\models\User;
+// include('../database/connection.php');
+// include_once('../models/Auth.php');
+// include_once('../models/User.php');
+// include_once('../models/Order.php');
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
@@ -26,7 +32,7 @@ if(!Auth::getSession()){
 
 if ($method == 'GET') {
     try {
-        $pdo = getConnection();
+        $pdo = db::getConnection();
         
         if (isset($_GET['getStatus']) && $_GET['getStatus'] === 'true') {      
                 $status_list = Order::getAllOrderStatuses($pdo);
@@ -61,11 +67,11 @@ if ($method == 'GET') {
             $search = $_GET['search'] ?? null;
             $search = ($search === 'null' || $search === '') ? null : $search;
 
-            $totalItems = Order::countAllOrders($search);
+            $totalItems = Order::countAllOrders($pdo, $search);
             
             $totalPages = ceil($totalItems / $perPage);
 
-            $orders = Order::getAllOrders($page, $perPage, $search);       
+            $orders = Order::getAllOrders($pdo, $page, $perPage, $search);       
 
             $pagination = [
                 "current_page" => $page,
@@ -92,7 +98,7 @@ if ($method == 'GET') {
 
 if ($method == 'POST') {
     try {
-        $pdo = getConnection();
+        $pdo = db::getConnection();
 
         if (!isset($inputData['action'])) {
             echo json_encode(["status" => "error", "message" => "Ação não especificada."]);

@@ -1,10 +1,11 @@
 <?php
-// require_once __DIR__ . '../../../vendor/autoload.php';
-// use Filazen\Backend\models\Auth;
+require_once __DIR__ . '../../../vendor/autoload.php';
+use Filazen\Backend\models\Auth;
+use Filazen\Backend\Database\db;
 
-require_once('../models/Auth.php');
-include('../database/connection.php');
-include_once('../models/Auth.php');
+// require_once('../models/Auth.php');
+// include('../database/connection.php');
+// include_once('../models/Auth.php');
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
@@ -15,7 +16,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $inputData = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 
 if($method == 'GET'){
-    if(!$_SESSION){
+    if(!Auth::getSession()){
         echo json_encode(["status" => "error", "message" => "Essa rota é protegida, faça login para acessá-la.", "authenticated" => false]);
         exit;
     }
@@ -25,7 +26,7 @@ if($method == 'GET'){
 
 if ($method == 'POST' && $inputData['method'] == 'username') {
     try {
-        $pdo = getConnection();
+        $pdo = db::getConnection();
         
         $username = $inputData['username'];
         $password = $inputData['password'];

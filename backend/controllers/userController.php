@@ -1,8 +1,14 @@
 <?php
-include_once('../database/connection.php');
-include_once('../models/User.php');
-include_once('../models/Auth.php');
-include_once('../SMTPMailer.php');
+require_once __DIR__ . '../../../vendor/autoload.php';
+use Filazen\Backend\models\Auth;
+use Filazen\Backend\Database\db;
+use Filazen\Backend\models\Order;
+use Filazen\Backend\models\User;
+use Filazen\Backend\SMTPMailer;
+// include_once('../database/connection.php');
+// include_once('../models/User.php');
+// include_once('../models/Auth.php');
+// include_once('../SMTPMailer.php');
 
 
 header("Access-Control-Allow-Origin: *");
@@ -21,7 +27,7 @@ if ($method == 'GET') {
         exit;
     }
     try {
-        $pdo = getConnection();
+        $pdo = db::getConnection();
 
         $users = User::getAllUsers($pdo);
 
@@ -43,7 +49,7 @@ if ($method == 'GET') {
 
 if ($method == 'POST') {
     try {
-        $pdo = getConnection();
+        $pdo = db::getConnection();
         
         if (!isset($inputData['username'],$inputData['email'] ,$inputData['full_name'], $inputData['password'])) {
             echo json_encode(["status" => "error", "message" => "Campos obrigatórios ausentes", "campos" => $inputData]);

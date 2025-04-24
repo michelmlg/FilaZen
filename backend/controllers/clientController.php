@@ -1,7 +1,12 @@
 <?php
-include('../database/connection.php');
-include_once('../models/Auth.php');
-include_once('../models/Client.php');
+
+require_once __DIR__ . '../../../vendor/autoload.php';
+use Filazen\Backend\Database\db;
+use Filazen\Backend\models\Auth;
+use Filazen\Backend\models\Client;
+// include('../database/connection.php');
+// include_once('../models/Auth.php');
+// include_once('../models/Client.php');
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
@@ -24,7 +29,7 @@ if(!Auth::getSession()){
 }
 
 try {
-    $pdo = getConnection();
+    $pdo = db::getConnection();
 
     if ($method == 'GET') {
 

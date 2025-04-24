@@ -1,7 +1,7 @@
 <?php
-// namespace FilaZen\Backend\models;
+namespace FilaZen\Backend\models;
 
-// use PDO;
+use PDO;
 
 class User {
     private $id;
@@ -144,7 +144,7 @@ class User {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     public static function verifyStatus($pdo, $id){
-        $sql = "SELECT status_id FROM user_status WHERE user_id = :id";
+        $sql = "SELECT us.status_id, s.name as status_name FROM user_status us INNER JOIN status s ON us.status_id = s.id WHERE user_id = :id";
 
         $stmt = $pdo->prepare($sql);  
         $stmt->execute(['id' => $id]);  
