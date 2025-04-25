@@ -1,5 +1,5 @@
 <?php
-namespace Filazen\Backend\Models;
+namespace Filazen\Backend\models;
 use PDO;
 use PDOException;
 

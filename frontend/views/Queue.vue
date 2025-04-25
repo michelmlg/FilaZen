@@ -39,11 +39,7 @@ export default {
     async getQueue() {
       try {
         const response = await fetch('/backend/controllers/queueController.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ populate: true })
+          method: 'GET',
         });
 
         const data = await response.json();
