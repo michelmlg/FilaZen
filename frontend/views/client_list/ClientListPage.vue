@@ -123,8 +123,8 @@ export default {
 <template>
   <div class="d-flex justify-content-center align-items-center mt-4">
     <div class="card shadow-lg" style="width: 100%; margin-right: 4rem; margin-left: 4rem;">
-      <div class="card-header text-center" style="background-color: var(--textVue); color: var(--secondaryVue)">
-        <h3>Clientes</h3>
+      <div class="card-header text-center" style="background-color: var(--bs-body-color); color: var(--bs-secondary);">
+        <h3 class="text-secondary">Clientes</h3>
       </div>
       
       <div class="card-body">
@@ -134,7 +134,7 @@ export default {
           <CreateClientForm></CreateClientForm>
         </div>
         <div class="d-flex justify-content-end align-items-center flex-nowrap">
-          <select class="btn border rounded me-2" v-model="table.limit" @change="changePage(1)" style="border-color: var(--secondaryVue) !important; color: var(--secondaryVue) !important;">
+          <select class="btn border rounded me-2" v-model="table.limit" @change="changePage(1)" style="border-color: var(--bs-secondary) !important; color: var(--bs-secondary) !important;">
             <option v-for="option in table.perPageOptions" :key="option" :value="option">
               {{ option }}
             </option>
@@ -157,7 +157,7 @@ export default {
         </div>
 
 
-        <div class="border rounded p-2 mt-2" style="border-color: var(--secondaryVue);">
+        <div class="border rounded p-2 mt-2" style="border-color: var(--bs-secondary);">
 
           <table id="clients-table" class="table table-striped table-hover">
             <thead>
@@ -233,17 +233,17 @@ export default {
   background-color: #f9f9f9;
 }
 .bg-secondary{
-    background-color: var(--secondaryVue) !important;
+    background-color: var(--bs-secondary) !important;
 }
 .btn-outline-secondary{
-    color: var(--secondaryVue) !important;
-    border-color: var(--secondaryVue) !important;
+    color: var(--bs-secondary) !important;
+    border-color: var(--bs-secondary) !important;
     
 }
 .btn-outline-secondary:hover{
-    background-color: var(--secondaryVue) !important;
-    color: var(--backgroundVue) !important;
-    border-color: var(--secondaryVue) !important;
+    background-color: var(--bs-secondary) !important;
+    color: var(--bs-body-bg) !important;
+    border-color: var(--bs-secondary) !important;
     
 }
 

@@ -6,7 +6,7 @@
       <div class="card-header text-center" style="background-color: var(--textVue); color: var(--secondaryVue)">
         <!-- Logo -->
         <img src="" alt="" class="mb-3" style="max-height: 80px;">
-        <h3>Registro</h3>
+        <h3 class="text-secondary">Registro</h3>
       </div>
       <div class="card-body">
         <form @submit.prevent="registerUser">
