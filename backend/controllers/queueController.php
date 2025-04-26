@@ -4,11 +4,6 @@ use Filazen\Backend\models\Auth;
 use Filazen\Backend\Database\db;
 use Filazen\Backend\models\Queue\Queue;
 
-// include('../database/connection.php');
-// include_once('../models/Auth.php');
-// include_once('../models/User.php');
-// include_once('../models/Queue.php');
-
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, DELETE");
 header("Content-Type: application/json");

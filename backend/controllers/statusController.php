@@ -5,10 +5,6 @@ use Filazen\Backend\models\Auth;
 use Filazen\Backend\models\User;
 use Filazen\Backend\Database\db;
 
-// include('../database/connection.php');
-// include_once('../models/Auth.php');
-// include_once('../models/User.php');
-
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
 header("Content-Type: application/json");
