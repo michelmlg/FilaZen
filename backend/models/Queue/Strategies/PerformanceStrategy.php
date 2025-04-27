@@ -2,16 +2,15 @@
 namespace Filazen\Backend\models\Queue\Strategies;
 
 use Filazen\Backend\interfaces\QueueStrategyInterface;
-use Filazen\Backend\database\db;
 use PDO;
 
 class PerformanceStrategy implements QueueStrategyInterface {
 
-    private PDO $pdo;
+    private ?PDO $pdo;
     private string $criteria;
 
-    public function __construct(string $criteria = 'total_value') {
-        $this->pdo = db::getConnection();
+    public function __construct($pdo, string $criteria = 'total_value') {
+        $this->pdo = $pdo;
         $this->criteria = $criteria;
     }
 
@@ -26,8 +25,10 @@ class PerformanceStrategy implements QueueStrategyInterface {
             throw new \InvalidArgumentException("Critério inválido para ordenação da fila.");
         }
 
+        $column = in_array($this->criteria, $allowedCriteria) ? $this->criteria : 'total_value';
+
         $stmt = $this->pdo->prepare("
-            SELECT user_id, {$this->criteria} 
+            SELECT user_id, $column 
             FROM user_performance 
             WHERE reference_month = DATE_FORMAT(NOW(), '%Y-%m-01')
             AND user_id IN ($placeholders)
@@ -40,8 +41,6 @@ class PerformanceStrategy implements QueueStrategyInterface {
             $bVal = $performances[$b['id']] ?? 0;
             return $aVal <=> $bVal;
         });
-
-        $this->pdo = null;
         
         return $queue;
     }
