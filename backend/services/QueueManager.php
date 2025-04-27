@@ -1,7 +1,7 @@
 <?php
 namespace Filazen\Backend\services;
 
-use Filazen\Backend\models\Queue;
+use Filazen\Backend\models\Queue\Queue;
 use Filazen\Backend\models\QueueSettings;
 use Filazen\Backend\models\Queue\Factories\StrategyFactory;
 use PDO;
@@ -15,8 +15,8 @@ class QueueManager {
         $this->pdo = $pdo;
 
         // Carrega a estratégia e critério do banco
-        $this->settings = QueueSettings::getQueueSettings();
-        $strategy = StrategyFactory::make($this->settings['strategy'] ?? 'updated_at', $this->settings['criterion'] ?? 'updated_at');
+        $this->settings = QueueSettings::getQueueSettings($pdo);
+        $strategy = StrategyFactory::make($this->settings);
 
         // Cria a fila com a estratégia
         $this->queue = new Queue();
@@ -26,25 +26,35 @@ class QueueManager {
         $this->queue->loadQueueFromDatabase($pdo);
     }
 
+    public function getSettings(): array {
+        return $this->settings;
+    }
+
     public function getQueue(): Queue {
         return $this->queue;
     }
 
     public function addUser(array $userData): void {
+        if ($this->queue->size() >= ($this->settings['max_size'] ?? 100)) {
+            echo "Fila atingiu o tamanho máximo de " . ($this->settings['max_size'] ?? 100) . " usuários.\n";
+            return;
+        }
+
         $this->queue->enqueue($userData);
         $this->queue->persistQueueToDatabase($this->pdo);
     }
 
-    public function populateFromAvailableUsers(): void {
+    public function populateQueue(): void {
 
-        if ($config['queue_locked'] === 'true') {
+        if ($this->settings['queue_locked'] === 'true') {
             echo "Fila está travada.\n";
             return;
         }
 
-
         $this->queue->populateQueueFromAvailableUsers($this->pdo);
     }
+
+
 
    
 }
