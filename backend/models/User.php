@@ -1,5 +1,5 @@
 <?php
-namespace FilaZen\Backend\models;
+namespace Filazen\Backend\models;
 
 use PDO;
 
@@ -215,6 +215,16 @@ class User {
         } catch (PDOException $e) {
             return false;
         }
+    }
+
+    public static function getUsersWithAvailableStatus($pdo) {
+        $stmt = $pdo->prepare("
+                SELECT u.id as id, u.full_name as full_name, u.img_path as img_path, us.updated_at as updated_at
+                FROM user u
+                JOIN user_status us ON u.id = us.user_id
+                WHERE us.status_id = 3");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
     

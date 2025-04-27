@@ -2,8 +2,8 @@
   <div class="d-flex flex-column justify-content-center align-items-center min-vh-100">
     <img src="/public/assets/FILAZEN-LOGO.svg" alt="Filazen Logo" style="height: 80px; width: auto; margin-bottom: 4rem;">
     <div class="card shadow-lg" style="max-width: 400px; width: 100%;">
-      <div class="card-header text-center" style="background-color: var(--textVue); color: var(--secondaryVue)">
-        <h3>Login</h3>
+      <div class="card-header text-center" style="background-color: var(--bs-body-color); color: var(--bs-secondary);">
+        <h3 class="text-secondary">Login</h3>
       </div>
       <div class="card-body">
         <form @submit.prevent="loginUser">
@@ -128,8 +128,8 @@ label {
 }
 
 .card-footer {
-  background-color: var(--background);
-  border-top: 1px solid var(--accent);
+  background-color: var(--bs-body-bg);
+  border-top: 1px solid var(--bs-success);
   padding: 1rem;
 }
 
@@ -144,17 +144,17 @@ form .form-control {
 }
 
 .btn-primary {
-  color: var(--textVue);
-  background-color: var(--primaryVue);
-  border-color: var(--primaryVue);
+  color: var(--bs-body-color);
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
 }
 
 .text-primary {
-  color: var(--primaryVue) !important;
+  color: var(--bs-primary) !important;
 }
 
 .text-primary:hover {
-  color: var(--primaryVue) !important;
+  color: var(--bs-primary) !important;
 }
 
 .btn-eye {

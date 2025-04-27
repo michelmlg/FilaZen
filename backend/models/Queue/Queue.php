@@ -1,18 +1,22 @@
 <?php
 namespace Filazen\Backend\models\Queue;
-// include_once __DIR__ . '/../interfaces/QueueStrategyInterface.php';
 
-use Filazen\Backend\interfaces\QueueStrategyInterface;
 use PDO;
 use PDOException;
+use Filazen\Backend\interfaces\QueueStrategyInterface;
+use Filazen\Backend\models\User;
 
 class Queue {
     private $queue = [];
     private QueueStrategyInterface $strategy;
 
     public function __construct() {
-        $this->queue = []; // Inicializa a fila como um array vazio
-        $this->strategy = new \Filazen\Backend\models\Queue\Strategies\PerformanceStrategy(); // Define uma estratégia padrão
+        $this->queue = [];
+        $this->strategy = new \Filazen\Backend\models\Queue\Strategies\UpdatedAtStrategy(); // Define uma estratégia padrão
+    }
+    
+    public function getStrategy(): QueueStrategyInterface {
+        return $this->strategy;
     }
     
     public function setStrategy(QueueStrategyInterface $strategy): void {
@@ -80,7 +84,14 @@ class Queue {
                 ORDER BY q.position ASC
             ");
             $stmt->execute();
-            $this->queue = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if(empty($result)) {
+                $this->queue = [];
+                return;
+            }
+
+            $this->queue = $result;
         } catch (PDOException $e) {
             echo json_encode(["status" => "error", "message" => "Erro ao carregar a fila: " . $e->getMessage()]);
             exit;
@@ -91,7 +102,6 @@ class Queue {
     public function reorderQueueWithNewStrategy(QueueStrategyInterface $newStrategy, PDO $pdo): void {
         $this->setStrategy($newStrategy);   
         $this->reorderQueue();              
-        $this->persistQueueToDatabase($pdo);
     }
 
     public function populateQueueFromAvailableUsers(PDO $pdo): void {
@@ -101,16 +111,8 @@ class Queue {
     
             // Cria um array com os IDs dos usuários que já estão na fila
             $existingUserIds = array_column($this->queue, 'id');
-    
-            // Busca usuários com status "Disponível" (status_id = 3)
-            $stmt = $pdo->prepare("
-                SELECT u.id as id, u.full_name as full_name, u.img_path as img_path, us.updated_at as updated_at
-                FROM user u
-                JOIN user_status us ON u.id = us.user_id
-                WHERE us.status_id = 3
-            ");
-            $stmt->execute();
-            $availableUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $availableUsers = User::getUsersWithAvailableStatus($pdo);
     
             if (empty($availableUsers)) {
                 return; // Ninguém disponível, mantemos a fila como está
@@ -122,13 +124,9 @@ class Queue {
                     $this->queue[] = $user; // adiciona no final
                 }
             }
-             //var_dump($this->queue);
+            
             // Reordena se houver estratégia
             $this->reorderQueue();
-    
-            // Persiste no banco
-            $this->persistQueueToDatabase($pdo);
-    
         } catch (PDOException $e) {
             echo json_encode([
                 "status" => "error",
@@ -137,29 +135,5 @@ class Queue {
             exit;
         }
     }
-    
-    
-
-
-    // public function populateQueueFromDatabase($pdo) {
-    //     try {
-    //         $stmt = $pdo->prepare("SELECT u.id as id, u.full_name as full_name, u.img_path as img_path, us.updated_at as updated_at FROM user u JOIN user_status us ON u.id = us.user_id WHERE us.status_id = 3 ORDER BY us.updated_at ASC");
-    //         $stmt->execute();
-    //         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-    //         // Verificar se o array está vazio
-    //         if (empty($users)) {
-    //             return null;
-    //         }
-        
-    //         // Caso haja usuários, processá-los
-    //         foreach ($users as $user) {
-    //             $this->enqueue($user);
-    //         }
-    //     } catch (PDOException $e) {
-    //         echo json_encode(["status" => "error", "message" => "Erro ao buscar usuários: " . $e->getMessage()]);
-    //         exit;
-    //     }
-    // }
 
 }

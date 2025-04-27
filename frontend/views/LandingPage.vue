@@ -137,7 +137,7 @@
   
   <style scoped>
   /* Variáveis Globais */
-  :root {
+  /* :root {
     --textVue: #08545e;
     --backgroundVue: #d3dede;
     --primaryVue: #37be81;
@@ -145,52 +145,52 @@
     --secondaryVue: #1bb2d0;
     --secondaryVueD: #107185;
     --accentVue: #7270db;
-  }
+  } */
   
   /* Hero Section */
   .hero {
-    background: linear-gradient(135deg, var(--secondaryVue), var(--primaryVue));
+    background: linear-gradient(135deg, var(--bs-secondary), var(--bs-primary));
     color: white;
     padding: 10rem 0;
   }
   
   .highlight {
-    color: var(--accentVue);
+    color: var(--bs-success);
   }
   
   /* Seção Sobre */
   .textVue {
-    color: var(--textVue);
+    color: var(--bs-body-color);
     font-weight: bolder;
     font-size: 40px;
   }
   
   .primaryVue {
-    color: var(--primaryVue);
+    color: var(--bs-primary);
   }
   
   .secondaryVue {
-    color: var(--secondaryVue);
+    color: var(--bs-secondary);
   }
   
   .accentVue {
-    color: var(--accentVue);
+    color: var(--bs-success);
   }
   
   /* Benefícios */
   .benefits {
-    background-color: var(--backgroundVue);
+    background-color: var(--bs-body-bg);
   }
   
   /* Call to Action */
   .cta {
-    background: var(--primaryVue);
+    background: var(--bs-primary);
     padding: 5rem 0;
   }
   
   /* Footer */
   .footer {
-    background-color: var(--textVue);
+    background-color: var(--bs-body-color);
     color: white;
   }
 
@@ -200,32 +200,32 @@
 }
 
 .textVue {
-  color: var(--textVue);
+  color: var(--bs-body-color);
 }
 
 /* Botões */
 .btn-outline-primaryVue {
-  color: var(--primaryVue);
-  border: 2px solid var(--primaryVue);
+  color: var(--bs-primary);
+  border: 2px solid var(--bs-primary);
   transition: all 0.3s ease;
 }
 
 .btn-outline-primaryVue:hover {
-  background: var(--primaryVue);
+  background: var(--bs-primary);
   color: white;
 }
 
 .btn-secondaryVue {
-  background: var(--secondaryVue);
+  background: var(--bs-secondary);
   color: white;
   transition: all 0.3s ease;
 }
 
 .btn-secondaryVue:hover {
-  background: darken(var(--secondaryVue), 10%);
+  background: darken(var(--bs-secondary), 10%);
 }
 .card {
-  background-color: var(--primaryVueD) !important;
+  background-color: var(--bs-info) !important;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   padding: 20px;
@@ -258,8 +258,8 @@
   width: 240px;
 }
 .saiba-mais-btn {
-  background-color: var(--primaryVue);
-  border: 2px solid var(--primaryVue);
+  background-color: var(--bs-primary);
+  border: 2px solid var(--bs-primary);
   color: white;
   padding: 10px 20px;
   font-size: 16px;
@@ -270,13 +270,13 @@
 
 .saiba-mais-btn:hover {
   background-color: white;
-  color: var(--primaryVue);
+  color: var(--bs-primary);
   box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
 }
 
 .comece-agora-btn {
-  background-color: var(--secondaryVue);
-  border: 2px solid var(--secondaryVue);
+  background-color: var(--bs-secondary);
+  border: 2px solid var(--bs-secondary);
   color: white;
   padding: 10px 20px;
   font-size: 16px;
@@ -287,8 +287,12 @@
 
 .comece-agora-btn:hover {
   background-color: white;
-  color: var(--secondaryVue);
+  color: var(--bs-secondary);
   box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tilt-card {
+  background-color: var(--bs-tertiary-bg) !important;
 }
 
 

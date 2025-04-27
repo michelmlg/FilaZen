@@ -6,8 +6,6 @@ namespace Filazen\Backend\models;
 use Filazen\Backend\models\User;
 
 
-include_once('User.php');
-
 session_start();
 
 class Auth {

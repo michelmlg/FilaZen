@@ -39,11 +39,7 @@ export default {
     async getQueue() {
       try {
         const response = await fetch('/backend/controllers/queueController.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ populate: true })
+          method: 'GET',
         });
 
         const data = await response.json();
@@ -221,7 +217,8 @@ export default {
 
           <button 
             v-else
-            class="btn btn-lg btn-outline-secondary botao-abrir btn-big-padding mt-2" 
+            class="btn btn-lg botao-abrir btn-big-padding mt-2"
+            style="color: var(--bs-dark)" 
             disabled>
             Você não é o primeiro da fila!
           </button>
@@ -229,8 +226,8 @@ export default {
 
         <div class="d-flex justify-content-center align-items-center mt-4">
           <div class="card shadow-lg w-80">
-            <div class="card-header text-center" style="background-color: var(--textVue); color: var(--secondaryVue)">
-              <h3>Meus pedidos</h3>
+            <div class="card-header text-center" style="background-color: var(--bs-body-color); color: var(--bs-secondary);">
+              <h3 class="text-secondary">Meus pedidos</h3>
             </div>
             
             <div class="card-body" style="max-height: 400px;">
@@ -277,7 +274,7 @@ export default {
 </template>
 
 <style scoped>
-:root {
+/* :root {
   --textVue: #08545e;
   --backgroundVue: #d3dede;
   --primaryVue: #37be81;
@@ -285,7 +282,7 @@ export default {
   --secondaryVue: #1bb2d0;
   --secondaryVueD: #107185;
   --accentVue: #7270db;
-}
+} */
 
 .main-container {
   display: flex;
@@ -334,7 +331,7 @@ export default {
 
 .destaque span {
   font-size: 3rem;
-  background: linear-gradient(135deg, var(--secondaryVue), var(--primaryVue));
+  background: linear-gradient(135deg, var(--bs-secondary), var(--bs-primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -360,8 +357,8 @@ export default {
 }
 
 .botao-abrir {
-  background: linear-gradient(135deg, var(--primaryVue), var(--secondaryVue));
-  color: white;
+  background: linear-gradient(135deg, var(--bs-primary), var(--bs-secondary));
+  color: var(--bs-body-color);
   font-size: 1.5rem;
   font-weight: bold;
   border: none;
@@ -391,7 +388,7 @@ export default {
 
 .order:hover {
   cursor: pointer;
-  background-color: var(--backgroundVue);
+  background-color: var(--bs-body-color);
   transform: scale(1.03);
 }
 

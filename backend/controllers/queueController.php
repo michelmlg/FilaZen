@@ -4,11 +4,6 @@ use Filazen\Backend\models\Auth;
 use Filazen\Backend\Database\db;
 use Filazen\Backend\models\Queue\Queue;
 
-// include('../database/connection.php');
-// include_once('../models/Auth.php');
-// include_once('../models/User.php');
-// include_once('../models/Queue.php');
-
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, DELETE");
 header("Content-Type: application/json");
@@ -35,7 +30,17 @@ $pdo = db::getConnection();
 
 if ($method == 'GET' && !isset($_GET['peek']) && !isset($_GET['list']) && !isset($_GET['size'])) {
     try {
-        $queue->loadQueueFromDatabase($pdo);
+
+        // Strategy Test
+
+        // $criteria = 'total_value';
+        // $queue->loadQueueFromDatabase($pdo);
+        // $strategy = new \Filazen\Backend\models\Queue\Strategies\RandomStrategy($pdo);
+        // $queue->reorderQueueWithNewStrategy($strategy, $pdo);
+        // $queue->persistQueueToDatabase($pdo);
+
+
+        $queue->loadQueueFromDatabase($pdo); // opcional, já que acabou de persistir
         echo json_encode(["status" => "success", "message" => "Fila retornada com sucesso.", "queue" => $queue->getQueue()]);
     } catch (PDOException $e) {
         echo json_encode(["status" => "error", "message" => "Erro ao retornar fila: " . $e->getMessage()]);

@@ -5,11 +5,6 @@ use Filazen\Backend\Database\db;
 use Filazen\Backend\models\Order;
 use Filazen\Backend\models\User;
 use Filazen\Backend\SMTPMailer;
-// include_once('../database/connection.php');
-// include_once('../models/User.php');
-// include_once('../models/Auth.php');
-// include_once('../SMTPMailer.php');
-
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");

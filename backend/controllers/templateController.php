@@ -1,5 +1,6 @@
 <?php
-include('../database/connection.php');
+require_once __DIR__ . '../../../vendor/autoload.php';
+use Filazen\Backend\database\db;
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
