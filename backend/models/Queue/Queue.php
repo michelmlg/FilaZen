@@ -15,6 +15,10 @@ class Queue {
         $this->strategy = new \Filazen\Backend\models\Queue\Strategies\UpdatedAtStrategy(); // Define uma estratégia padrão
     }
     
+    public function getStrategy(): QueueStrategyInterface {
+        return $this->strategy;
+    }
+    
     public function setStrategy(QueueStrategyInterface $strategy): void {
         $this->strategy = $strategy;
         $this->reorderQueue();
@@ -80,7 +84,14 @@ class Queue {
                 ORDER BY q.position ASC
             ");
             $stmt->execute();
-            $this->queue = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if(empty($result)) {
+                $this->queue = [];
+                return;
+            }
+
+            $this->queue = $result;
         } catch (PDOException $e) {
             echo json_encode(["status" => "error", "message" => "Erro ao carregar a fila: " . $e->getMessage()]);
             exit;
@@ -91,7 +102,6 @@ class Queue {
     public function reorderQueueWithNewStrategy(QueueStrategyInterface $newStrategy, PDO $pdo): void {
         $this->setStrategy($newStrategy);   
         $this->reorderQueue();              
-        $this->persistQueueToDatabase($pdo);
     }
 
     public function populateQueueFromAvailableUsers(PDO $pdo): void {
@@ -117,10 +127,6 @@ class Queue {
             
             // Reordena se houver estratégia
             $this->reorderQueue();
-    
-            // Persiste no banco
-            $this->persistQueueToDatabase($pdo);
-    
         } catch (PDOException $e) {
             echo json_encode([
                 "status" => "error",
