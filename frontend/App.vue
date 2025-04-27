@@ -111,6 +111,15 @@ export default {
   --bs-btn-focus-shadow-rgb: 55, 190, 129 !important;
   --bs-btn-border-color: #37be81 !important;
 
+  /* Color Hovers */
+  --bs-primary-hover: #2e9c69;
+  --bs-secondary-hover: #1598b3;
+  --bs-success-hover: #5c5adb;
+  --bs-info-hover: #0a5d6c;
+  --bs-danger-hover: #b02a37;
+  --bs-warning-hover: #e0a800;
+  --bs-dark-hover: #063f48;
+
   /* Forms */
   --bs-form-valid-color: #37be81 !important;
   --bs-form-valid-border-color: #37be81 !important;
@@ -160,5 +169,125 @@ export default {
     background-color: var(--bs-bg-subtle) !important;
     transition: background-color 0.3s ease;
   }
+
+  .btn-primary {
+    background-color: var(--bs-primary) !important;
+    border-color: var(--bs-primary) !important;
+  }
+  .btn-primary:hover {
+    background-color: var(--bs-primary-hover) !important;
+    border-color: var(--bs-primary-hover) !important;
+  }
+  .btn-secondary {
+    background-color: var(--bs-secondary) !important;
+    border-color: var(--bs-secondary) !important;
+  }
+  .btn-secondary:hover {
+    background-color: var(--bs-secondary-hover) !important;
+    border-color: var(--bs-secondary-hover) !important;
+  }
+  .btn-success {
+    background-color: var(--bs-success) !important;
+    border-color: var(--bs-success) !important;
+  }
+  .btn-success:hover {
+    background-color: var(--bs-success-hover) !important;
+    border-color: var(--bs-success-hover) !important;
+  }
+  .btn-danger {
+    background-color: var(--bs-danger) !important;
+    border-color: var(--bs-danger) !important;
+  }
+  .btn-danger:hover {
+    background-color: var(--bs-danger-hover) !important;
+    border-color: var(--bs-danger-hover) !important;
+  }
+  .btn-warning {
+    background-color: var(--bs-warning) !important;
+    border-color: var(--bs-warning) !important;
+  }
+  .btn-warning:hover {
+    background-color: var(--bs-warning-hover) !important;
+    border-color: var(--bs-warning-hover) !important;
+  }
+  .btn-info {
+    background-color: var(--bs-info) !important;
+    border-color: var(--bs-info) !important;
+  }
+  .btn-info:hover {
+    background-color: var(--bs-info-hover) !important;
+    border-color: var(--bs-info-hover) !important;
+  }
+  .btn-light {
+    background-color: var(--bs-light) !important;
+    border-color: var(--bs-light) !important;
+  }
+  .btn-light:hover {
+    background-color: var(--bs-light-hover) !important;
+    border-color: var(--bs-light-hover) !important;
+  }
+  .btn-dark {
+    background-color: var(--bs-dark) !important;
+    border-color: var(--bs-dark) !important;
+  }
+  .btn-dark:hover {
+    background-color: var(--bs-dark-hover) !important;
+    border-color: var(--bs-dark-hover) !important;
+  }
+  .btn-link {
+    color: var(--bs-link-color) !important;
+  }
+  .btn-link:hover {
+    color: var(--bs-link-hover-color) !important;
+  }
+  .btn-outline-primary {
+    color: var(--bs-primary) !important;
+    border-color: var(--bs-primary) !important;
+  }
+  .btn-outline-primary:hover {
+    background-color: var(--bs-primary) !important;
+    color: var(--bs-body-bg) !important;
+  }
+  .btn-outline-secondary {
+    color: var(--bs-secondary) !important;
+    border-color: var(--bs-secondary) !important;
+  }
+  .btn-outline-secondary:hover {
+    background-color: var(--bs-secondary) !important;
+    color: var(--bs-body-bg) !important;
+  }
+  .btn-outline-success {
+    color: var(--bs-success) !important;
+    border-color: var(--bs-success) !important;
+  }
+  .btn-outline-success:hover {
+    background-color: var(--bs-success) !important;
+    color: var(--bs-body-bg) !important;
+  }
+  .btn-outline-danger {
+    color: var(--bs-danger) !important;
+    border-color: var(--bs-danger) !important;
+  }
+  .btn-outline-danger:hover {
+    background-color: var(--bs-danger) !important;
+    color: var(--bs-body-bg) !important;
+  }
+  .btn-outline-warning {
+    color: var(--bs-warning) !important;
+    border-color: var(--bs-warning) !important;
+  }
+  .btn-outline-warning:hover {
+    background-color: var(--bs-warning) !important;
+    color: var(--bs-body-bg) !important;
+  }
+  .btn-outline-info {
+    color: var(--bs-info) !important;
+    border-color: var(--bs-info) !important;
+  }
+  .btn-outline-info:hover {
+    background-color: var(--bs-info) !important;
+    color: var(--bs-body-bg) !important;
+  }
+
 
 </style>
