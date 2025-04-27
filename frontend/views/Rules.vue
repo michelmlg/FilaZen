@@ -28,15 +28,15 @@
         <div class="card p-4">
           <h6 class="mb-3">{{ currentStrategyTitle }}</h6>
 
-          <div v-if="selectedStrategy === 'updated_at'">
+          <div v-if="selectedStrategy === 'updated_at_strategy'">
             <p class="text-muted mb-2">Configure a ordem de chegada</p>
             <select v-model="selectedUpdatedAtOrder" @change="updateUpdatedAtOrder" class="form-select w-auto">
-              <option selected>Oldest First</option>
-              <option>Newest First</option>
+              <option value="ASC" selected>Oldest First</option>
+              <option value="DESC" >Newest First</option>
             </select>
           </div>
 
-          <div v-else-if="selectedStrategy === 'performance'">
+          <div v-else-if="selectedStrategy === 'performance_strategy'">
             <p class="text-muted mb-2">Configure a fila com base nas métricas de performance</p>
             <select class="form-select" v-model="selectedPerformanceCriteria" @change="selectPerformanceCriteria">
               <option selected disabled>Escolha o critério de performance</option>
@@ -47,7 +47,7 @@
             </select>
           </div>
 
-          <div v-else-if="selectedStrategy === 'random'">
+          <div v-else-if="selectedStrategy === 'random_strategy'">
             <p class="text-muted mb-2">Entradas serão pegas aleatóriamente</p>
             <div class="form-check">
             
@@ -63,21 +63,21 @@
 
       <div class="col-md-6 d-flex align-items-stretch">
         <div class="card p-4 w-100">
-          <h6>Queue Capacity</h6>
-          <p class="text-muted mb-2">Set maximum users allowed</p>
+          <h6>Capacidade da Fila</h6>
+          <p class="text-muted mb-2">Máximo de usuários na fila</p>
           <input type="number" class="form-control" @change="updateQueueCapacity" v-model="queueCapacity" min="1" />
         </div>
       </div>
 
       <div class="col-md-6 d-flex align-items-stretch">
         <div class="card p-4 w-100">
-          <h6>Refresh Settings</h6>
-          <p class="text-muted mb-2">Configure update frequency</p>
+          <h6>Taxa de atualização</h6>
+          <p class="text-muted mb-2">Configure a frequencia de atualização</p>
           <div class="d-flex align-items-center gap-2">
             <input type="number" class="form-control w-50" v-model="refreshFrequency" min="1" @change="updateRefreshSettings" />
             <select class="form-select w-50" v-model="refreshUnit" @change="updateRefreshSettings">
-              <option value="minutes">Minutes</option>
-              <option value="seconds">Seconds</option>
+              <option value="minutes">Minutos</option>
+              <option value="hours">Horas</option>
             </select>
           </div>
           <small class="text-muted d-block mt-2">
@@ -106,17 +106,17 @@ export default {
       strategies: [
         {
           label: 'Ordem de chegada',
-          value: 'updated_at',
+          value: 'updated_at_strategy',
           icon: 'fas fa-list-ol'
         },
         {
           label: 'Performance',
-          value: 'performance',
+          value: 'performance_strategy',
           icon: 'fas fa-chart-line'
         },
         {
           label: 'Aleatório',
-          value: 'random',
+          value: 'random_strategy',
           icon: 'fas fa-random'
         },
       ],
