@@ -217,7 +217,8 @@ export default {
 
           <button 
             v-else
-            class="btn btn-lg btn-outline-secondary botao-abrir btn-big-padding mt-2" 
+            class="btn btn-lg botao-abrir btn-big-padding mt-2"
+            style="color: var(--bs-dark)" 
             disabled>
             Você não é o primeiro da fila!
           </button>
@@ -357,7 +358,7 @@ export default {
 
 .botao-abrir {
   background: linear-gradient(135deg, var(--bs-primary), var(--bs-secondary));
-  color: white;
+  color: var(--bs-body-color);
   font-size: 1.5rem;
   font-weight: bold;
   border: none;
