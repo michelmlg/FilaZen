@@ -19,16 +19,13 @@ class PerformanceStrategy implements QueueStrategyInterface {
         $userIds = array_map(fn($user) => $user['id'], $queue);
         if (empty($userIds)) return $queue;
 
-        // Prepara placeholders para IN (...)
         $placeholders = implode(',', array_fill(0, count($userIds), '?'));
 
-        // Valida o critério para evitar SQL injection
         $allowedCriteria = ['total_sells', 'total_orders', 'response_time', 'total_value'];
         if (!in_array($this->criteria, $allowedCriteria)) {
             throw new \InvalidArgumentException("Critério inválido para ordenação da fila.");
         }
 
-        // Monta e executa a query dinamicamente com o critério desejado
         $stmt = $this->pdo->prepare("
             SELECT user_id, {$this->criteria} 
             FROM user_performance 
@@ -38,13 +35,14 @@ class PerformanceStrategy implements QueueStrategyInterface {
         $stmt->execute($userIds);
         $performances = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
-        // Ordena
         usort($queue, function ($a, $b) use ($performances) {
             $aVal = $performances[$a['id']] ?? 0;
             $bVal = $performances[$b['id']] ?? 0;
             return $aVal <=> $bVal;
         });
 
+        $this->pdo = null;
+        
         return $queue;
     }
 }
