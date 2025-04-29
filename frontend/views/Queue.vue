@@ -227,7 +227,7 @@ export default {
         <div class="d-flex justify-content-center align-items-center mt-4">
           <div class="card shadow-lg w-80">
             <div class="card-header text-center" style="background-color: var(--bs-body-color); color: var(--bs-secondary);">
-              <h3 class="text-secondary">Meus pedidos</h3>
+              <h3 class="text-secondary">Em atendimento</h3>
             </div>
             
             <div class="card-body" style="max-height: 400px;">

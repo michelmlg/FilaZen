@@ -44,26 +44,26 @@ try {
 
 
 //Cria Intervalo de execução
-$refresh_interval = $settings['refresh_interval'];
-$refresh_time_unit = $settings['refresh_time_unit'];
+// $refresh_interval = $settings['refresh_interval'];
+// $refresh_time_unit = $settings['refresh_time_unit'];
 
-$cronIntervalExpression = '';
-switch ($refresh_time_unit) {
-    case 'minutes':
-        // Executa a cada X minutos
-        $cronIntervalExpression = "*/$refresh_interval * * * *"; // A cada X minutos
-        break;
+// $cronIntervalExpression = '';
+// switch ($refresh_time_unit) {
+//     case 'minutes':
+//         // Executa a cada X minutos
+//         $cronIntervalExpression = "*/$refresh_interval * * * *"; // A cada X minutos
+//         break;
 
-    case 'hours':
-        // Executa a cada X horas
-        $cronIntervalExpression = "0 */$refresh_interval * * *"; // A cada X horas
-        break;
+//     case 'hours':
+//         // Executa a cada X horas
+//         $cronIntervalExpression = "0 */$refresh_interval * * *"; // A cada X horas
+//         break;
 
-    default:
-        // Caso não seja reconhecido, executa a cada minuto
-        $cronIntervalExpression = "*/$refresh_interval * * * *"; // A cada X minutos
-        break;
-}
+//     default:
+//         // Caso não seja reconhecido, executa a cada minuto
+//         $cronIntervalExpression = "*/$refresh_interval * * * *"; // A cada X minutos
+//         break;
+// }
 
 
 
