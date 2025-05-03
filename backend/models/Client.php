@@ -8,17 +8,49 @@ class Client {
     private $cpf;
     private $name;
     private $email;
+    private $observations;
     private $created_at;
     private $cellphone_numbers = [];
 
-    public function __construct($id = null, $cpf = null, $name = null, $email = null, $created_at = null, $cellphone_numbers = []) {
+    public function __construct($id = null, $cpf = null, $name = null, $email = null, $observations = null, $created_at = null, $cellphone_numbers = []) {
         $this->id = $id;
         $this->cpf = $cpf;
         $this->name = $name;
         $this->email = $email;
+        $this->observations = $observations;
         $this->created_at = $created_at;
         $this->cellphone_numbers = $cellphone_numbers;
     }
+
+     // Getters
+     public function getId() {
+        return $this->id;
+    }
+
+    public function getCpf() {
+        return $this->cpf;
+    }
+
+    public function getName() {
+        return $this->name;
+    }
+
+    public function getEmail() {
+        return $this->email;
+    }
+
+    public function getObservations() {
+        return $this->observations;
+    }
+
+    public function getCreatedAt() {
+        return $this->created_at;
+    }
+
+    public function getCellphoneNumbers() {
+        return $this->cellphone_numbers;
+    }
+    
 
     // Inserir um novo cliente e seus números de telefone
     public function store($pdo) {
@@ -125,10 +157,21 @@ class Client {
         }
     }
 
+    // Function to update a single collumn in the client table
+    public static function updateField(PDO $pdo, int $clientId, string $field, $value):bool {
+        $sql = "UPDATE client SET $field = :value WHERE id = :id"; 
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute([
+            ':value' => $value,
+            ':id' => $clientId
+        ]);
+    
+    }
+
 
     // Buscar cliente por ID e seus números de telefone
     public static function findById($pdo, $id) {
-        $sql = "SELECT * FROM clients WHERE id = :id";
+        $sql = "SELECT * FROM client WHERE id = :id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':id' => $id]);
         $clientData = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -148,6 +191,7 @@ class Client {
             $clientData['cpf'],
             $clientData['name'],
             $clientData['email'],
+            $clientData['observations'],
             $clientData['created_at'],
             $numbers
         );
@@ -160,6 +204,19 @@ class Client {
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':id' => $id]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    public function addObservations($pdo, $observations) {
+        try {
+            $sql = "UPDATE client SET observations = :observations WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            return $stmt->execute([
+                ':id' => $this->id,
+                ':observations' => $observations
+            ]);
+        } catch (PDOException $e) {
+            return false;
+        }
     }
 
     // Adicionar número de telefone a um cliente
@@ -309,30 +366,19 @@ class Client {
         return ceil($totalClients / $limit);
     }
 
-    // Getters
-    public function getId() {
-        return $this->id;
+    public function toAssociativeArray() {
+        return [
+            'id' => $this->id,
+            'cpf' => $this->cpf,
+            'name' => $this->name,
+            'email' => $this->email,
+            'observations' => $this->observations,
+            'created_at' => $this->created_at,
+            'cellphone_numbers' => $this->cellphone_numbers,
+        ];
     }
 
-    public function getCpf() {
-        return $this->cpf;
-    }
-
-    public function getName() {
-        return $this->name;
-    }
-
-    public function getEmail() {
-        return $this->email;
-    }
-
-    public function getCreatedAt() {
-        return $this->created_at;
-    }
-
-    public function getCellphoneNumbers() {
-        return $this->cellphone_numbers;
-    }
+   
 }
 
 ?>
