@@ -29,7 +29,7 @@ export default {
       } catch (error) {
         console.error("Erro na verificação de autenticação:", error);
       }
-    },
+    }
   },
   async mounted(){
     await this.checkAuth();
@@ -76,7 +76,7 @@ export default {
   --bs-heading-color: #08545e !important;
 
   /* Fundos */
-  --bs-body-bg: #d3dede !important;
+  --bs-body-bg: #f3f3f3 !important;
   --bs-secondary-bg: #edf5f7 !important;
   --bs-tertiary-bg: #f0f5f5 !important;
 
@@ -127,19 +127,8 @@ export default {
   --bs-form-invalid-border-color: #dc3545 !important;
 }
 
-
-  /* :root{
-    --textVue: #08545e;
-    --backgroundVue: #d3dede;
-    --primaryVue: #37be81;
-    --secondaryVue: #1bb2d0;
-    --accentVue: #7270db;
-  }
-*/
   body{
     font-family: "Nunito", serif;
-    /* background-color: var(--backgroundVue);
-    color: var(--textVue); */
   } 
 
   .form-select{
