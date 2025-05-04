@@ -179,12 +179,12 @@ class Client {
         if (!$clientData) return null;
 
         // Buscar números de telefone do cliente
-        $sql = "SELECT cn.number FROM client_cellphone_numbers ccn 
+        $sql = "SELECT cn.id, cn.number FROM client_cellphone_numbers ccn 
                 JOIN cellphone_numbers cn ON ccn.number_id = cn.id 
                 WHERE ccn.client_id = :id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':id' => $id]);
-        $numbers = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $numbers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return new Client(
             $clientData['id'],
@@ -288,6 +288,15 @@ class Client {
         } catch (PDOException $e) {
             return false;
         }
+    }
+
+    public static function updateCellphoneNumber($pdo, $cellphoneId, $newNumber) {
+        $sql = "UPDATE cellphone_numbers SET number = :number WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute([
+            ':number' => $newNumber,
+            ':id' => $cellphoneId
+        ]);
     }
 
 

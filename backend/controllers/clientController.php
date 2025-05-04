@@ -124,6 +124,21 @@ try {
                 throw new Exception("Erro ao atualizar campo.");
             }
         }
+        
+        if(isset($inputData['action']) && $inputData['action'] == "updateCellphoneNumber") {
+            $cellphoneId = $inputData['phone_id'] ?? 0;
+            $newCellphoneNumber = $inputData['phone_number'] ?? null;
+    
+            if (!$cellphoneId || !$newCellphoneNumber) {
+                throw new Exception("ID do cliente, ID do celular e novo número são obrigatórios.");
+            }
+    
+            if (Client::updateCellphoneNumber($pdo, $cellphoneId, $newCellphoneNumber)) {
+                echo json_encode(["status" => "success", "message" => "Número de celular atualizado com sucesso."]);
+            } else {
+                throw new Exception("Erro ao atualizar número de celular.");
+            }
+        }
 
         if(!isset($inputData['action'])) {
             $clientId = $inputData['client_id'] ?? 0;
