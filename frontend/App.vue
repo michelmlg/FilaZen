@@ -79,6 +79,7 @@ export default {
   --bs-body-bg: #f3f3f3 !important;
   --bs-secondary-bg: #edf5f7 !important;
   --bs-tertiary-bg: #f0f5f5 !important;
+  --bs-neutral-bg: #949494 !important;
 
   /* Emphasis */
   --bs-primary-text-emphasis: #1f6f4c !important;
