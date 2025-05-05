@@ -295,7 +295,7 @@ class Order {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
-    public function addInteraction($pdo, $id, $type, $body, $created_by) {
+    public static function addInteraction($pdo, $id, $type, $body, $created_by) {
         try {
             $sql = "INSERT INTO order_interactions (order_id, type, body, created_by, created_at) 
                     VALUES (:order_id, :type, :body, :created_by, NOW())";
