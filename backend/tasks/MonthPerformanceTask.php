@@ -91,7 +91,7 @@ $task = $schedule->run(function () {
         echo "[" . date('Y-m-d H:i:s') . "] ERRO GERAL: " . $e->getMessage() . "\n";
     }
 });
-$task->everyTenMinutes(); 
+$task->everyMinute(); 
 // $task->dailyAt('23:59');
 
 //

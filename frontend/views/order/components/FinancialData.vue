@@ -1,6 +1,6 @@
 <template>
     <div class="card shadow-sm mb-4">
-      <div class="card-header bg-light">
+      <div class="card-header bg-primary">
         <h5 class="mb-0">Informações Financeiras</h5>
       </div>
       <div class="card-body">

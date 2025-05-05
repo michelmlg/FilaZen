@@ -42,32 +42,45 @@ const routes = [
     {
         path: "/dashboard",
         component: () => loadModule("/frontend/layouts/SystemLayout.vue", options),
+        meta: { requiresAuth: true }, 
         children: [
             {
                 path: 'queue', 
                 component: () => loadModule("/frontend/views/Queue.vue", options),
+                meta: { requiresAuth: true } 
             },
             {
                 path: 'orders', 
                 component: () => loadModule("/frontend/views/order_history/OrderHistoryPage.vue", options),
+                meta: { requiresAuth: true } 
             },
             {
                 path: 'order/:id', 
                 name: 'order',
                 component: () => loadModule("/frontend/views/order/OrderPage.vue", options),
+                meta: { requiresAuth: true } 
             },
             {
                 path: 'clients', 
                 component: () => loadModule("/frontend/views/client_list/ClientListPage.vue", options),
+                meta: { requiresAuth: true } 
+            },
+            {
+                path: 'client/:id', 
+                name: 'client-profile',
+                component: () => loadModule("/frontend/views/client_profile/ClientProfilePage.vue", options),
+                meta: { requiresAuth: true } 
             },
             {
                 path: 'rules', 
                 component: () => loadModule("/frontend/views/Rules.vue", options),
+                meta: { requiresAuth: true } 
             },
             {
                 path: 'register-order', 
                 name: 'register-order',
                 component: () => loadModule("/frontend/views/register_order/RegisterOrderPage.vue", options),
+                meta: { requiresAuth: true } 
             },
         ]
     }

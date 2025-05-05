@@ -389,7 +389,7 @@ export default {
 .order:hover {
   cursor: pointer;
   background-color: var(--bs-body-color);
-  transform: scale(1.03);
+ 
 }
 
 </style>

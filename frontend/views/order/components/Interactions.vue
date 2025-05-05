@@ -1,10 +1,10 @@
 <template>
     <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light">
+        <div class="card-header bg-primary">
             <h5 class="mb-0">Interações do pedido</h5>
         </div>
-        <div class="card-body bg-secondary rounded-bottom overflow-auto" style="min-height: 60vh; max-height: 80vh;">
-            <div v-if="interactions.length <= 0" v-for="interaction in interactions" :key="interaction.created_at" class="d-flex flex-column mb-3 align-items-end" :class="{
+        <div class="card-body bg-interaction rounded-bottom overflow-auto" style="min-height: 60vh; max-height: 80vh;">
+            <div v-if="interactions.length > 0" v-for="interaction in interactions" :key="interaction.created_at" class="d-flex flex-column mb-3 align-items-end" :class="{
                 'align-items-end': interaction.type === 'seller_note'
             }">
                 <span class="text-white mb-1 text-start">
@@ -28,7 +28,10 @@
 <script>
 export default {
     props: {
-        interactions: Array, // Recebe as interações como um array
+        interactions: {
+            type: Array,
+            default: () => []
+        },
         users: Array // Lista de usuários para mapear nomes
     },
     methods: {
@@ -43,3 +46,10 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+.bg-interaction{
+    background-color: var(--bs-neutral-bg) !important;
+}
+
+</style>

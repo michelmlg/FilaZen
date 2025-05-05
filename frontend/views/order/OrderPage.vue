@@ -6,7 +6,7 @@
             <div class="me-2">
                 Pedido: 
             </div>
-            <div class="badge me-4 fw-bold fs-5" style="background-color: var(--textVue);">
+            <div class="badge me-4 fw-bold fs-5 bg-dark">
                 #{{ this.order.id }}
             </div>
             <small>
@@ -18,7 +18,7 @@
     </div>
 
     <div class="card rounded mb-4">
-        <div class="card-header bg-light mb-3">
+        <div class="card-header bg-primary mb-3">
             <h5 class="mb-0">Classificação do Pedido</h5>
         </div>
         <div class="card-body p-3 rounded-bottom">
@@ -122,7 +122,7 @@
         order:{
           id: this.$route.params.id,
           created_at: null,
-          interactions: null,
+          interactions: [],
           estimated_value: 0,
           discount: 0,
           delivery_date: null,
@@ -298,11 +298,14 @@
 
             const result = await response.json();
 
-            if (result.success) {
-              alert("Pedido atualizado com sucesso!");
-            } else {
-              alert("Erro: " + result.message);
+            // mostra um sweet alert com toast 
+            
+
+            if (result.status != "success") {
+              alert(result.message);
             }
+
+
 
           } catch (error) {
             console.error("Erro ao atualizar pedido:", error);

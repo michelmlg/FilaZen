@@ -1,6 +1,6 @@
 <template>
     <div class="card shadow-sm mb-4 rounded">
-      <div class="card-header">
+      <div class="card-header bg-primary">
         <h5 class="mb-0">Adicionar Interação</h5>
       </div>
       <div class="card-body rounded-bottom">
@@ -24,7 +24,7 @@
                 <label for="messageInput" class="form-label">Mensagem</label>
                 <textarea id="messageInput" v-model="message" class="form-control" rows="4"
                   placeholder="Digite sua mensagem..."></textarea>
-                <button class="btn btn-sm text-light mt-2 mb-4" style="background-color: var(--textVue);">
+                <button class="btn btn-sm btn-primary mt-2 mb-4">
                   <i class="fa-solid fa-paper-plane"></i> Adicionar Mensagem
                 </button>
               </form>
@@ -38,7 +38,7 @@
                 <label for="notesInput" class="form-label">Notas</label>
                 <textarea id="notesInput" v-model="note" class="form-control" rows="4"
                   placeholder="Digite suas notas..."></textarea>
-                <button class="btn btn-sm text-light mt-2 mb-4" style="background-color: var(--textVue);">
+                <button class="btn btn-sm btn-primary mt-2 mb-4">
                   <i class="fa-solid fa-pen"></i> Adicionar Nota
                 </button>
               </form>
