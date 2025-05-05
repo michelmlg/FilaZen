@@ -167,7 +167,6 @@ export default {
                 <th>CPF</th>
                 <th>E-mail</th>
                 <th>Telefones</th>
-                <th>Histórico de Atendimento</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -179,7 +178,7 @@ export default {
                   </div>
                 </td>
               </tr>
-              <tr v-else v-for="(client, index) in table.clients" :key="client.id">
+              <tr v-else v-for="(client, index) in table.clients" :key="client.id" @click="$router.push({ name: 'client-profile', params: { id: client.id } })" style="cursor: pointer;">
                 <td>
                   <span class="bg-secondary fw-bold rounded ps-2 pe-2 text-light">
                     #{{ client.id }}
@@ -197,14 +196,6 @@ export default {
                       {{ phone }}
                     </li>
                   </ul>
-                </td>
-                <td>
-                  <div>
-                    <button class="btn btn-sm btn-outline-secondary rounded mb-2">Ver</button>
-                    <div>
-                      <span>Cliente Desde: </span>{{ client.created_at }}
-                    </div>
-                  </div>
                 </td>
                 <td>
                   <button class="btn btn-secondary btn-sm rounded me-2" @click="openUpdateClient(client)"><i class="fa-solid fa-pen-to-square"></i></button>
