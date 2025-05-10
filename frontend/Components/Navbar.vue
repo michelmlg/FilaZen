@@ -195,8 +195,7 @@ export default {
               <span class="username">{{ userData?.username }}</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="#/profile">Perfil</a></li>
-              <li><a class="dropdown-item" href="#/settings">Configurações</a></li>
+              <!-- <li><a class="dropdown-item" href="#/profile">Perfil</a></li> -->
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item text-danger" href="#" @click="logout">Sair</a></li>
             </ul>
