@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '../../../vendor/autoload.php';
 use Filazen\Backend\models\Auth;
-use Filazen\Backend\Database\db;
+use Filazen\Backend\database\db;
 use Filazen\Backend\models\Order;
 use Filazen\Backend\models\User;
 

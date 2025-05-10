@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '../../../vendor/autoload.php';
-use Filazen\Backend\Database\db;
+use Filazen\Backend\database\db;
 use Filazen\Backend\SMTPMailer;
 
 header("Access-Control-Allow-Origin: *");
