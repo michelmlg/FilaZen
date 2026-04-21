@@ -50,7 +50,7 @@ export const errorHandler = (
     return res.status(401).json({ status: 'error', message: 'Token expirado.' })
   }
 
-  console.error('🔥 Erro interno:', err)
+  console.error('Erro interno:', err)
 
   return res.status(500).json({
     status: 'error',
