@@ -3,17 +3,18 @@ import { prisma } from '../utils/prisma'
 import { getQueueSettings, updateQueueSettings, checkIdleUsers } from './queue.service'
 import { generateSnapshot } from './snapshot.service'
 import { emitToTenant } from './socket.service'
+import { logger } from '../utils/logger'
 
 let schedulerRunning = false
 
 export function startScheduler(): void {
   if (schedulerRunning) {
-    console.log('[Scheduler] Já está em execução')
+    logger.info('Já está em execução', { module: 'Scheduler' })
     return
   }
 
   schedulerRunning = true
-  console.log('[Scheduler] Iniciado')
+  logger.info('Iniciado', { module: 'Scheduler' })
 
   cron.schedule('* * * * *', async () => {
     await checkBusinessHours()
@@ -26,7 +27,7 @@ export function startScheduler(): void {
 
 export function stopScheduler(): void {
   schedulerRunning = false
-  console.log('[Scheduler] Parado')
+  logger.info('Parado', { module: 'Scheduler' })
 }
 
 async function checkBusinessHours(): Promise<void> {
@@ -40,7 +41,7 @@ async function checkBusinessHours(): Promise<void> {
       await processTenantSchedule(tenant.id)
     }
   } catch (error) {
-    console.error('[Scheduler] Erro ao verificar horários:', error)
+    logger.error('Erro ao verificar horários', { module: 'Scheduler', error })
   }
 }
 
@@ -63,7 +64,7 @@ async function processTenantSchedule(tenantId: string): Promise<void> {
     const currentTime = formatter.format(now)
 
     if (settings.businessHoursEnabled && currentTime === settings.businessHoursEnd && !settings.locked) {
-      console.log(`[Scheduler] Fechando fila do tenant ${tenantId}`)
+      logger.info(`Fechando fila do tenant`, { module: 'Scheduler', tenantId })
 
       await generateSnapshot(tenantId, 'SCHEDULE')
 
@@ -76,15 +77,15 @@ async function processTenantSchedule(tenantId: string): Promise<void> {
 
 
 
-      console.log(`[Scheduler] Snapshot gerado e fila travada para tenant ${tenantId}`)
+      logger.success(`Snapshot gerado e fila travada`, { module: 'Scheduler', tenantId })
     }
 
     if (settings.businessHoursEnabled && currentTime === settings.businessHoursStart && settings.locked) {
-      console.log(`[Scheduler] Abrindo fila do tenant ${tenantId}`)
+      logger.info(`Abrindo fila do tenant`, { module: 'Scheduler', tenantId })
 
       if (settings.clearOnStart) {
         await clearQueue(tenantId)
-        console.log(`[Scheduler] Fila limpa para tenant ${tenantId}`)
+        logger.info(`Fila limpa`, { module: 'Scheduler', tenantId })
       }
 
       await updateQueueSettings(tenantId, { locked: false })
@@ -94,10 +95,10 @@ async function processTenantSchedule(tenantId: string): Promise<void> {
         reason: { type: null, message: null }
       })
 
-      console.log(`[Scheduler] Fila destravada para tenant ${tenantId}`)
+      logger.success(`Fila destravada`, { module: 'Scheduler', tenantId })
     }
   } catch (error) {
-    console.error(`[Scheduler] Erro ao processar tenant ${tenantId}:`, error)
+    logger.error(`Erro ao processar tenant`, { module: 'Scheduler', tenantId, error })
   }
 }
 
@@ -131,6 +132,6 @@ async function processAllTenantsIdleCheck(): Promise<void> {
       await checkIdleUsers(tenant.id)
     }
   } catch (error) {
-    console.error('[Scheduler] Erro ao verificar usuários idle:', error)
+    logger.error('Erro ao verificar usuários idle', { module: 'Scheduler', error })
   }
 }

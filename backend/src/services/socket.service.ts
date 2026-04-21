@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import { JwtPayload } from '../middlewares/auth.middleware'
 import { buildQueueSnapshot, getQueueSettings, isWithinBusinessHours } from './queue.service'
 import { prisma } from '../utils/prisma'
+import { logger } from '../utils/logger'
 
 let io: SocketServer
 
@@ -41,9 +42,9 @@ export const initSocket = (httpServer: HttpServer) => {
           connectedUsers.set(user.id, user.lastQueuePing.getTime())
         }
       }
-      console.log(`[WS] Carregados ${connectedUsers.size} lastQueuePings do DB`)
+      logger.info(`Carregados ${connectedUsers.size} lastQueuePings do DB`, { module: 'WS' })
     } catch (error) {
-      console.error(`[WS] Erro ao carregar lastQueuePings`, error)
+      logger.error(`Erro ao carregar lastQueuePings`, { module: 'WS', error })
     }
   }
   loadLastQueuePings()
@@ -64,7 +65,7 @@ export const initSocket = (httpServer: HttpServer) => {
 
   io.on('connection', async (socket: Socket) => {
     const user = socket.data.user as JwtPayload
-    console.log(`[WS] CONN user:${user.userId} tenant:${user.tenantId} socket:${socket.id}`)
+    logger.success(`Usuário conectado`, { module: 'WS', socket: socket.id, user: user.name, userId: user.userId, tenant: user.tenantSlug })
 
     socket.join(`tenant:${user.tenantId}`)
     socket.join(`user:${user.userId}`)
@@ -92,11 +93,11 @@ export const initSocket = (httpServer: HttpServer) => {
         lockReason
       })
     } catch (error) {
-      console.error(`[WS] Erro ao enviar queue:init para user:${user.userId}`, error)
+      logger.error(`Erro ao enviar queue:init`, { module: 'WS', user: user.name, error })
     }
 
     socket.on('disconnect', (reason) => {
-      console.log(`[WS] DISCONN user:${user.userId} socket:${socket.id} reason:${reason}`)
+      logger.warn(`Usuário desconectado`, { module: 'WS', user: user.name, reason })
       connectedUsers.delete(user.userId)
     })
 
@@ -110,13 +111,13 @@ export const initSocket = (httpServer: HttpServer) => {
           data: { lastQueuePing: new Date(now) }
         })
       } catch (error) {
-        console.error(`[WS] Erro ao salvar lastQueuePing`, error)
+        logger.error(`Erro ao salvar heartbeat ping`, { module: 'WS', user: user.name, error })
       }
     })
 
     // Usuário indica que está Indo offline (mudança de rota/fechar)
     socket.on('user:offline', async () => {
-      console.log(`[WS] OFFLINE user:${user.userId}`)
+      logger.warn(`Usuário está indo offline`, { module: 'WS', user: user.name })
       connectedUsers.delete(user.userId)
       try {
         await prisma.user.update({
@@ -124,16 +125,16 @@ export const initSocket = (httpServer: HttpServer) => {
           data: { lastQueuePing: null }
         })
       } catch (error) {
-        console.error(`[WS] Erro ao limpar lastQueuePing`, error)
+        logger.error(`Erro ao limpar ping`, { module: 'WS', user: user.name, error })
       }
     })
 
     socket.onAny((event, ...args) => {
-      console.log(`[WS] RECV user:${user.userId} tenant:${user.tenantId} socket:${socket.id} event:${event} data:${formatData(args)}`)
+      logger.debug(`RECV Event: ${event}`, { module: 'WS', user: user.name, data: formatData(args) })
     })
 
     socket.on('error', (error) => {
-      console.log(`[WS] ERROR socket:${socket.id} user:${user.userId} message:${error.message}`)
+      logger.error(`Erro no socket`, { module: 'WS', user: user.name, message: error.message })
     })
   })
 
@@ -146,12 +147,12 @@ export const getIO = () => {
 }
 
 export const emitToTenant = (tenantId: string, event: string, data: unknown) => {
-  console.log(`[WS] EMIT tenant:${tenantId} event:${event} data:${formatData(data)}`)
+  logger.debug(`EMIT to Tenant: ${event}`, { module: 'WS', tenantId, data: formatData(data) })
   getIO().to(`tenant:${tenantId}`).emit(event, data)
 }
 
 export const emitToUser = (userId: string, event: string, data: unknown) => {
-  console.log(`[WS] EMIT user:${userId} event:${event} data:${formatData(data)}`)
+  logger.debug(`EMIT to User: ${event}`, { module: 'WS', userId, data: formatData(data) })
   getIO().to(`user:${userId}`).emit(event, data)
 }
 

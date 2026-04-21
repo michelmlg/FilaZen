@@ -6,8 +6,10 @@ import { Role } from '@prisma/client'
 export interface JwtPayload {
   userId: string
   tenantId: string
+  tenantSlug: string
   role: Role
   email: string
+  name: string
 }
 
 declare global {

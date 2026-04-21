@@ -13,8 +13,8 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 httpServer.listen(PORT, () => {
-  console.log(`🚀 FilaZen API rodando na porta ${PORT}`)
-  console.log(`📡 WebSocket (Socket.io) inicializado`)
-  console.log(`⏰ Scheduler de fila iniciado`)
-  console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`)
+  console.log(`FilaZen API rodando na porta ${PORT}`)
+  console.log(`WebSocket (Socket.io) inicializado`)
+  console.log(`Scheduler de fila iniciado`)
+  console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`)
 })
