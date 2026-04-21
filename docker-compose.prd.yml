@@ -3,8 +3,8 @@ version: '3.9'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: filazen_postgres
-    restart: unless-stopped
+    container_name: filazen_postgres_prd
+    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -12,10 +12,10 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_prd:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - filazen_network
+      - filazen_network_prd
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -26,10 +26,10 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: filazen_backend
-    restart: unless-stopped
+    container_name: filazen_backend_prd
+    restart: always
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: production
       PORT: ${PORT:-3000}
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
@@ -37,22 +37,18 @@ services:
       MIGRATION_SECRET: ${MIGRATION_SECRET}
     ports:
       - "${PORT:-3000}:3000"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     depends_on:
       postgres:
         condition: service_healthy
     networks:
-      - filazen_network
-    command: sh -c "npm install && npx prisma generate && npm run dev"
+      - filazen_network_prd
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: filazen_frontend
-    restart: unless-stopped
+    container_name: filazen_frontend_prd
+    restart: always
     environment:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
@@ -60,18 +56,14 @@ services:
       VITE_WS_URL: ${VITE_WS_URL:-http://localhost:3000}
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     depends_on:
       - backend
     networks:
-      - filazen_network
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+      - filazen_network_prd
 
 volumes:
-  postgres_data:
+  postgres_data_prd:
 
 networks:
-  filazen_network:
+  filazen_network_prd:
     driver: bridge
