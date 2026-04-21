@@ -1,0 +1,408 @@
+// ============================================================
+// FilaZen SaaS — Schema Prisma (PostgreSQL)
+// ============================================================
+// Multi-tenant: todas as entidades operacionais são isoladas
+// por tenant_id. GlobalSettings é a única entidade global.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMERAÇÕES FIXAS DO SISTEMA
+// ============================================================
+
+enum Role {
+  SUPERADMIN  // Dono do SaaS
+  ADMIN       // Administrador do Tenant (Gestor)
+  MANAGER     // Gerente de vendas
+  SELLER      // Vendedor
+}
+
+enum CustomerType {
+  PF // Pessoa Física
+  PJ // Pessoa Jurídica
+}
+
+enum TicketStatus {
+  OPEN        // Aberto - aguardando
+  IN_PROGRESS // Em andamento
+  DONE        // Concluído
+  CANCELLED   // Cancelado
+}
+
+enum QueueStrategy {
+  FIFO        // First In, First Out (ordem de chegada)
+  PERFORMANCE // Baseado em performance do período
+  HYBRID      // Combinação dos dois
+}
+
+// Significado técnico de um status de usuário (para o motor de fila)
+enum StatusMeaning {
+  AVAILABLE   // Disponível - entra na fila ativa
+  BUSY        // Em atendimento - fora da fila
+  PAUSED      // Pausa curta - suspenso temporariamente
+  LUNCH       // Almoço - suspenso
+  OFFLINE     // Offline - fora do sistema
+  AWAY        // Ausente (pulo de vez temporário)
+}
+
+// ============================================================
+// CONFIGURAÇÕES GLOBAIS DO SAAS (SUPERADMIN)
+// ============================================================
+
+model GlobalSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("global_settings")
+}
+
+// ============================================================
+// TENANT (Empresa/Assinante do SaaS)
+// ============================================================
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique  // URL amigável: acme-corp
+  logoUrl   String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  settings     TenantSetting[]
+  users        User[]
+  userStatuses UserStatus[]
+  customers    Customer[]
+  tags         Tag[]
+  tickets      Ticket[]
+  snapshots    QueueSnapshot[]
+  auditLogs    AuditLog[]
+  apiKeys      ApiKey[]
+
+  @@map("tenants")
+}
+
+// ============================================================
+// CONFIGURAÇÕES POR TENANT
+// ============================================================
+
+model TenantSetting {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  key   String // ex: "queue_strategy", "business_hours", "inactive_alert_days"
+  value Json   // ex: "fifo" | { start: "08:00", end: "18:00" } | 30
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, key])
+  @@map("tenant_settings")
+}
+
+// ============================================================
+// API KEYS (Por Tenant - para integrações externas futuras)
+// ============================================================
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String    // Descrição: ex "Integração WhatsApp"
+  key         String    @unique
+  active      Boolean   @default(true)
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@map("api_keys")
+}
+
+// ============================================================
+// STATUS CUSTOMIZÁVEL DE USUÁRIO (Por Tenant)
+// ============================================================
+
+model UserStatus {
+  id        String        @id @default(uuid())
+  tenantId  String
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String        // ex: "Tomando Café", "Em Reunião"
+  color     String        // ex: "#f59e0b"
+  icon      String?       // ex: "coffee" (nome do ícone)
+  meaning   StatusMeaning // Significado técnico para o motor de fila
+  isDefault Boolean       @default(false)
+  active    Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  users User[]
+
+  @@map("user_statuses")
+}
+
+// ============================================================
+// USUÁRIOS (Admin, Gerente, Vendedor)
+// ============================================================
+
+model User {
+  id           String  @id @default(uuid())
+  tenantId     String
+  tenant       Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  email        String
+  passwordHash String
+  role         Role    @default(SELLER)
+  active       Boolean @default(true)
+  avatarUrl    String?
+
+  // Status dinâmico (FK para UserStatus customizável)
+  statusId String?
+  status   UserStatus? @relation(fields: [statusId], references: [id])
+
+  // Controle de fila
+  queuePosition         Int?      // Posição atual na fila (null = fora da fila)
+  queueEnteredAt         DateTime? // Quando entrou na fila (para FIFO)
+  queueOriginalPosition Int?      // Posição original para restaurar ao retornar
+  wasSkipped            Boolean   @default(false) // Foi pulado na rodada atual
+  skippedAt             DateTime? // Quando foi pulado
+  isIdle                Boolean   @default(false) // Usuário está ocioso (away)
+  lastQueuePing       DateTime? // Último ping do usuário na fila (heartbeat)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  performances  UserPerformance[]
+  ticketsOwned  Ticket[]
+  auditLogsBy   AuditLog[]
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+// ============================================================
+// PERFORMANCE DOS USUÁRIOS (Por Período)
+// ============================================================
+
+model UserPerformance {
+  id       String @id @default(uuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  periodStart  DateTime // Início do período (ex: 01/01/2025)
+  periodEnd    DateTime // Fim do período (ex: 31/01/2025)
+  periodType   String   // "MONTHLY" | "QUARTERLY" | "SEMIANNUAL"
+
+  totalTickets     Int     @default(0) // Total de atendimentos
+  completedTickets Int     @default(0) // Concluídos
+  cancelledTickets Int     @default(0) // Cancelados
+  totalRevenue     Decimal @default(0) @db.Decimal(15, 2) // Retorno financeiro
+  conversionRate   Decimal @default(0) @db.Decimal(5, 4) // Taxa de conversão (0-1)
+  score            Decimal @default(0) @db.Decimal(10, 4) // Score calculado para fila
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, periodStart, periodType])
+  @@map("user_performances")
+}
+
+// ============================================================
+// TAGS (Categorias Customizáveis por Tenant)
+// ============================================================
+
+model Tag {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name     String
+  color    String @default("#6366f1") // Cor da tag
+  active   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customers CustomerTag[]
+
+  @@unique([tenantId, name])
+  @@map("tags")
+}
+
+// ============================================================
+// CLIENTES (PF e PJ)
+// ============================================================
+
+model Customer {
+  id       String       @id @default(uuid())
+  tenantId String
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type     CustomerType
+
+  // Dados comuns
+  name     String
+  email    String?
+  phone    String?
+  notes    String?
+  active   Boolean @default(true)
+
+  // PF - Pessoa Física
+  cpf       String?
+  birthDate DateTime?
+
+  // PJ - Pessoa Jurídica
+  cnpj            String?
+  companyName     String? // Nome fantasia
+  legalName       String? // Razão Social
+  stateRegistration String? // Inscrição Estadual
+
+  // Endereço
+  address    String?
+  city       String?
+  state      String?
+  zipCode    String?
+  country    String? @default("BR")
+
+  // Metadados extras (campos flexíveis)
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  tags    CustomerTag[]
+  tickets Ticket[]
+
+  @@map("customers")
+}
+
+// Relação N:N entre Customer e Tag
+model CustomerTag {
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tagId      String
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+
+  @@id([customerId, tagId])
+  @@map("customer_tags")
+}
+
+// ============================================================
+// TICKETS / ORDENS DE COMPRA (Núcleo do Sistema)
+// ============================================================
+
+model Ticket {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Número sequencial amigável por tenant (ex: #00042)
+  number Int
+
+  title       String?
+  description String?
+  status      TicketStatus @default(OPEN)
+
+  // Valores financeiros
+  estimatedValue Decimal? @db.Decimal(15, 2)
+  finalValue     Decimal? @db.Decimal(15, 2)
+
+  // Relações principais
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  // Timestamps de ciclo de vida
+  openedAt    DateTime  @default(now())
+  acceptedAt  DateTime? // Quando o vendedor assumiu
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  // Metadados extras (campos livres)
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Histórico de eventos do ticket
+  events TicketEvent[]
+
+  @@unique([tenantId, number])
+  @@map("tickets")
+}
+
+// Eventos/log interno de cada Ticket (estilo GLPI)
+model TicketEvent {
+  id       String @id @default(uuid())
+  ticketId String
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  type    String // "STATUS_CHANGE" | "COMMENT" | "ASSIGNMENT" | "VALUE_UPDATE"
+  content String // Texto do evento/comentário
+  data    Json?  // Dados extras (ex: { from: "OPEN", to: "IN_PROGRESS" })
+
+  createdAt DateTime @default(now())
+
+  @@map("ticket_events")
+}
+
+// ============================================================
+// SNAPSHOT DA FILA (Fotografia do estado no fim do dia)
+// ============================================================
+
+model QueueSnapshot {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  snapshotDate DateTime // Data do snapshot (dia)
+  strategy     QueueStrategy
+  queueData    Json // Array com a ordem dos usuários e seus dados naquele momento
+  // ex: [{ userId, name, position, totalToday, status }]
+
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, snapshotDate])
+  @@map("queue_snapshots")
+}
+
+// ============================================================
+// AUDIT LOG (Rastreabilidade completa)
+// ============================================================
+
+model AuditLog {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  action     String  // "CREATE" | "UPDATE" | "DELETE" | "LOGIN" | "LOGOUT"
+  entity     String  // "Ticket" | "Customer" | "User" | etc.
+  entityId   String? // ID da entidade afetada
+  oldData    Json?   // Estado anterior
+  newData    Json?   // Novo estado
+  ip         String? // IP do cliente
+  userAgent  String? // Navegador/cliente
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, entity])
+  @@index([tenantId, userId])
+  @@map("audit_logs")
+}
