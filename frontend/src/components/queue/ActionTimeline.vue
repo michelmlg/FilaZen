@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { QueueAction } from '@/stores/queue.store'
 import { Button } from '@/components/ui/button'
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-vue-next'
+import { ChevronLeftIcon, ChevronRightIcon, UserPlusIcon, UserMinusIcon, ForwardIcon, TicketIcon, CheckCircleIcon, LockIcon, UnlockIcon, ClipboardIcon } from 'lucide-vue-next'
 
 defineProps<{
   actions: QueueAction[]
@@ -17,21 +17,21 @@ const emit = defineEmits<{
 const getActionConfig = (actionType: QueueAction['actionType']) => {
   switch (actionType) {
     case 'JOIN':
-      return { icon: '➕', label: 'entrou na fila', bgClass: 'bg-success/10', textClass: 'text-success' }
+      return { icon: UserPlusIcon, label: 'entrou na fila', bgClass: 'bg-success/10', textClass: 'text-success' }
     case 'LEAVE':
-      return { icon: '↩️', label: 'saiu da fila', bgClass: 'bg-muted', textClass: 'text-muted-foreground' }
+      return { icon: UserMinusIcon, label: 'saiu da fila', bgClass: 'bg-muted', textClass: 'text-muted-foreground' }
     case 'SKIP':
-      return { icon: '⏭️', label: 'foi pulado', bgClass: 'bg-warning/10', textClass: 'text-warning' }
+      return { icon: ForwardIcon, label: 'foi pulado', bgClass: 'bg-warning/10', textClass: 'text-warning' }
     case 'OPEN_TICKET':
-      return { icon: '🎫', label: 'abriu ticket', bgClass: 'bg-primary/10', textClass: 'text-primary' }
+      return { icon: TicketIcon, label: 'abriu ticket', bgClass: 'bg-primary/10', textClass: 'text-primary' }
     case 'COMPLETE_TICKET':
-      return { icon: '✅', label: 'completou ticket', bgClass: 'bg-success/10', textClass: 'text-success' }
+      return { icon: CheckCircleIcon, label: 'completou ticket', bgClass: 'bg-success/10', textClass: 'text-success' }
     case 'LOCK':
-      return { icon: '🔒', label: 'travou a fila', bgClass: 'bg-destructive/10', textClass: 'text-destructive' }
+      return { icon: LockIcon, label: 'travou a fila', bgClass: 'bg-destructive/10', textClass: 'text-destructive' }
     case 'UNLOCK':
-      return { icon: '🔓', label: 'destravou a fila', bgClass: 'bg-success/10', textClass: 'text-success' }
+      return { icon: UnlockIcon, label: 'destravou a fila', bgClass: 'bg-success/10', textClass: 'text-success' }
     default:
-      return { icon: '📋', label: 'ação desconhecida', bgClass: 'bg-muted', textClass: 'text-muted-foreground' }
+      return { icon: ClipboardIcon, label: 'ação desconhecida', bgClass: 'bg-muted', textClass: 'text-muted-foreground' }
   }
 }
 
@@ -65,10 +65,10 @@ const formatTime = (timestamp: string) => {
         class="flex items-start gap-3 py-2 px-3 rounded-lg hover:bg-muted/50"
       >
         <span 
-          class="text-lg shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+          class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
           :class="getActionConfig(action.actionType).bgClass"
         >
-          <span :class="getActionConfig(action.actionType).textClass">{{ getActionConfig(action.actionType).icon }}</span>
+          <component :is="getActionConfig(action.actionType).icon" class="w-4 h-4" :class="getActionConfig(action.actionType).textClass" />
         </span>
         <div class="flex-1 min-w-0">
           <span class="text-sm">

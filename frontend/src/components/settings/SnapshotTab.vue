@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectItem } from '@/components/ui/select'
 import SnapshotCard from '@/components/queue/SnapshotCard.vue'
 import SnapshotDetail from '@/components/queue/SnapshotDetail.vue'
+import { BarChart3Icon } from 'lucide-vue-next'
 
 const queue = useQueueStore()
 const toast = useToast()
@@ -101,7 +102,7 @@ const formatPeriodLabel = (days: string) => {
     </div>
 
     <div v-else-if="queue.snapshots.length === 0" class="text-center py-12">
-      <div class="text-4xl mb-4">📊</div>
+      <BarChart3Icon class="w-12 h-12 mx-auto mb-4 text-neutral-300" />
       <h3 class="text-lg font-medium mb-2">Nenhum snapshot encontrado</h3>
       <p class="text-muted-foreground mb-4">
         Os snapshots são gerados automaticamente ao fechar a fila ou manualmente.

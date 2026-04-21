@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { UserInQueue } from '@/stores/queue.store'
+import { UsersIcon } from 'lucide-vue-next'
 import QueueCard from './QueueCard.vue'
 
 const props = defineProps<{
@@ -54,7 +55,7 @@ const hasScrollableContent = computed(() => props.maxHeight && props.users.lengt
         v-if="users.length === 0" 
         class="text-center py-12 text-neutral-400"
       >
-        <div class="text-4xl mb-4">👥</div>
+        <UsersIcon class="w-12 h-12 mx-auto mb-4 text-neutral-300" />
         <p class="font-medium">Nenhum vendedor na fila</p>
         <p class="text-sm mt-1">Aguarde alguém entrar ou entre na fila</p>
       </div>
