@@ -15,7 +15,11 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  envDir: '../',
   server: {
-    host: true
+    host: true,
+    watch: {
+      usePolling: true
+    }
   }
 })

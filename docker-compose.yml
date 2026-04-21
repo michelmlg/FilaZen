@@ -34,6 +34,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      MIGRATION_SECRET: ${MIGRATION_SECRET}
     ports:
       - "${PORT:-3000}:3000"
     volumes:
@@ -44,20 +45,34 @@ services:
         condition: service_healthy
     networks:
       - filazen_network
-    command: npm run dev
+    command: >
+      sh -c "
+        if [ \"$$NODE_ENV\" = 'production' ]; then
+          echo 'Modo produção: Instalando dependências e compilando backend...' &&
+          npm install &&
+          npm run build &&
+          npm run db:migrate:prod &&
+          echo 'Build concluído. Iniciando servidor...' &&
+          exec node dist/server.js;
+        else
+          npm install &&
+          npm run dev;
+        fi
+      "
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      target: dev-stage
     container_name: filazen_frontend
     restart: unless-stopped
     environment:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
+      VITE_API_PREFIX: ${VITE_API_PREFIX:-/api/v1}
       VITE_WS_URL: ${VITE_WS_URL:-http://localhost:3000}
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5173}:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -65,7 +80,19 @@ services:
       - backend
     networks:
       - filazen_network
-    command: npm run dev
+    command: >
+      sh -c "
+        if [ \"$$NODE_ENV\" = 'production' ]; then
+          echo 'Modo produção: Instalando dependências e compilando frontend...' &&
+          npm install &&
+          npm run build &&
+          echo 'Build concluído. Iniciando preview server...' &&
+          npx serve -s dist -l 5173;
+        else
+          npm install &&
+          npm run dev -- --host 0.0.0.0;
+        fi
+      "
 
 volumes:
   postgres_data:
