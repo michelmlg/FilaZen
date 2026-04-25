@@ -19,7 +19,7 @@ datasource db {
 // ============================================================
 
 enum Role {
-  SUPERADMIN  // Dono do SaaS
+  SUPERADMIN  // MasterUser
   ADMIN       // Administrador do Tenant (Gestor)
   MANAGER     // Gerente de vendas
   SELLER      // Vendedor
@@ -81,8 +81,9 @@ model Tenant {
   updatedAt DateTime @updatedAt
 
   // Relações
+  lead         TenantLead?
   settings     TenantSetting[]
-  users        User[]
+  members      TenantUser[]
   userStatuses UserStatus[]
   customers    Customer[]
   tags         Tag[]
@@ -92,6 +93,26 @@ model Tenant {
   apiKeys      ApiKey[]
 
   @@map("tenants")
+}
+
+// ============================================================
+// DADOS DE LEAD DO TENANT (Capturados no Registro)
+// ============================================================
+
+model TenantLead {
+  id          String   @id @default(uuid())
+  tenantId    String   @unique
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  industry    String?  // Segmento: varejo, saude, tech, servicos, educacao, imobiliario, financeiro, outros
+  source      String?  // Origem: google, indicacao, instagram, facebook, linkedin, youtube, evento, outros
+  companySize String?  // Tamanho: solo, 1-10, 11-50, 51-200, 200+
+  phone       String?  // Telefone de contato
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tenant_leads")
 }
 
 // ============================================================
@@ -148,9 +169,65 @@ model UserStatus {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  users User[]
+  members TenantUser[]
 
   @@map("user_statuses")
+}
+
+// ============================================================
+// ENTRY DE FILA (Controle de posição do membro na fila)
+// ============================================================
+
+model QueueEntry {
+  id                String      @id @default(uuid())
+  tenantUserId       String      @unique
+  tenantUser        TenantUser  @relation(fields: [tenantUserId], references: [id], onDelete: Cascade)
+
+  position          Int?        // Posição atual na fila (null = fora da fila)
+  enteredAt        DateTime?   // Quando entrou na fila (para FIFO)
+  originalPosition Int?        // Posição original para restaurar ao retornar
+  wasSkipped      Boolean     @default(false)   // Foi pulado na rodada atual
+  skippedAt       DateTime?   // Quando foi pulado
+  isIdle          Boolean     @default(false) // Usuário está ocioso (away)
+  lastPing        DateTime?   // Último ping do usuário na fila (heartbeat)
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@map("queue_entries")
+}
+
+// ============================================================
+// TENANT MEMBERSHIP (PIVOT)
+// ============================================================
+
+model TenantUser {
+  id                  String   @id @default(uuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  role                Role     @default(SELLER)
+  isOwner             Boolean  @default(false)
+  isCreatedFromTenant Boolean  @default(false)
+  active              Boolean  @default(true)
+
+  createdAt           DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Status dinâmico (FK para UserStatus customizável)
+  statusId String?
+  status   UserStatus? @relation(fields: [statusId], references: [id])
+
+  // Relação de fila
+  queueEntry QueueEntry?
+
+  // Relation for tickets
+  ticketsOwned Ticket[]
+
+  @@unique([userId, tenantId])
+  @@map("tenant_users")
 }
 
 // ============================================================
@@ -159,37 +236,21 @@ model UserStatus {
 
 model User {
   id           String  @id @default(uuid())
-  tenantId     String
-  tenant       Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name         String
-  email        String
+  email        String  @unique
   passwordHash String
-  role         Role    @default(SELLER)
   active       Boolean @default(true)
   avatarUrl    String?
 
-  // Status dinâmico (FK para UserStatus customizável)
-  statusId String?
-  status   UserStatus? @relation(fields: [statusId], references: [id])
-
-  // Controle de fila
-  queuePosition         Int?      // Posição atual na fila (null = fora da fila)
-  queueEnteredAt         DateTime? // Quando entrou na fila (para FIFO)
-  queueOriginalPosition Int?      // Posição original para restaurar ao retornar
-  wasSkipped            Boolean   @default(false) // Foi pulado na rodada atual
-  skippedAt             DateTime? // Quando foi pulado
-  isIdle                Boolean   @default(false) // Usuário está ocioso (away)
-  lastQueuePing       DateTime? // Último ping do usuário na fila (heartbeat)
+  tenants      TenantUser[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relações
   performances  UserPerformance[]
-  ticketsOwned  Ticket[]
   auditLogsBy   AuditLog[]
 
-  @@unique([tenantId, email])
   @@map("users")
 }
 
@@ -321,10 +382,10 @@ model Ticket {
   finalValue     Decimal? @db.Decimal(15, 2)
 
   // Relações principais
-  userId     String?
-  user       User?     @relation(fields: [userId], references: [id])
-  customerId String?
-  customer   Customer? @relation(fields: [customerId], references: [id])
+  tenantUserId    String?
+  tenantUser     TenantUser? @relation(fields: [tenantUserId], references: [id], map: "ticket_tenant_user_fk")
+  customerId    String?
+  customer     Customer? @relation(fields: [customerId], references: [id])
 
   // Timestamps de ciclo de vida
   openedAt    DateTime  @default(now())
