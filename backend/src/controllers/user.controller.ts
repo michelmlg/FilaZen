@@ -7,28 +7,72 @@ import { Role } from '@prisma/client'
 
 export const listUsers = async (req: Request, res: Response) => {
   const { tenantId } = req.user!
+
+  // Busca usuários que possuem vínculo com este tenant
   const users = await prisma.user.findMany({
-    where: { tenantId },
-    include: { status: true },
+    where: {
+      tenants: {
+        some: { tenantId, active: true }
+      }
+    },
+    include: { 
+      tenants: {
+        where: { tenantId },
+        include: { status: true }
+      }
+    },
     omit: { passwordHash: true },
-    orderBy: [{ queuePosition: 'asc' }, { name: 'asc' }],
+    orderBy: { name: 'asc' },
   })
-  return res.json(users)
+
+  // Achata o role e status do pivot para o objeto de resposta
+  const flattenedUsers = users.map(u => ({
+    ...u,
+    role: u.tenants[0]?.role,
+    isOwner: u.tenants[0]?.isOwner,
+    active: u.tenants[0]?.active,
+    status: u.tenants[0]?.status || null,
+    tenants: undefined
+  }))
+
+  return res.json(flattenedUsers)
 }
 
 export const getUser = async (req: Request, res: Response) => {
   const { tenantId } = req.user!
+  const targetUserId = req.params.id as string
+
   const user = await prisma.user.findFirst({
-    where: { id: req.params.id as string, tenantId },
-    include: { status: true, performances: { orderBy: { periodStart: 'desc' }, take: 6 } },
+    where: { 
+      id: targetUserId,
+      tenants: { some: { tenantId, active: true } }
+    },
+    include: { 
+      performances: { orderBy: { periodStart: 'desc' }, take: 6 },
+      tenants: {
+        where: { tenantId },
+        include: { status: true }
+      }
+    },
     omit: { passwordHash: true },
   })
-  if (!user) throw new AppError('Usuário não encontrado.', 404)
-  return res.json(user)
+
+  if (!user) throw new AppError('Usuário não encontrado na organização.', 404)
+
+  const membership = user.tenants[0]
+  const { tenants: _, ...userBase } = user
+
+  return res.json({
+    ...userBase,
+    role: membership?.role,
+    isOwner: membership?.isOwner,
+    active: membership?.active,
+    status: membership?.status || null
+  })
 }
 
 export const createUser = async (req: Request, res: Response) => {
-  const { tenantId, userId: requestingUserId } = req.user!
+  const { tenantId, userId: requestingUserId, role: requestingUserRole } = req.user!
   const { name, email, role } = req.body as {
     name: string
     email: string
@@ -39,22 +83,21 @@ export const createUser = async (req: Request, res: Response) => {
     throw new AppError('Nome e email são obrigatórios.')
   }
 
-  if (!email.includes('@')) {
-    throw new AppError('Email inválido.')
+  if (requestingUserRole !== 'ADMIN') {
+    throw new AppError('Apenas administradores podem convidar usuários.')
   }
 
-  const existingUser = await prisma.user.findUnique({
-    where: { tenantId_email: { tenantId, email } },
+  // Verifica se o usuário já tem vínculo com este tenant
+  const existingMembership = await prisma.tenantUser.findFirst({
+    where: { tenantId, user: { email } }
   })
 
-  if (existingUser) {
-    throw new AppError('Já existe um usuário com este email neste tenant.')
+  if (existingMembership) {
+    throw new AppError('Este usuário já faz parte desta organização.')
   }
 
-  let finalRole = role === 'MANAGER' ? 'MANAGER' : 'SELLER'
-
+  let finalRole = role && ['ADMIN', 'MANAGER', 'SELLER'].includes(role) ? role : 'SELLER'
   const tempPassword = generateTempPassword()
-
   const passwordHash = await bcrypt.hash(tempPassword, 12)
 
   const availableStatus = await prisma.userStatus.findFirst({
@@ -65,18 +108,34 @@ export const createUser = async (req: Request, res: Response) => {
     }
   })
 
-  const user = await prisma.user.create({
-    data: {
-      tenantId,
-      name,
-      email,
-      passwordHash,
-      role: finalRole as Role,
-      active: true,
-      statusId: availableStatus?.id,
-    },
-    include: { status: true },
-    omit: { passwordHash: true },
+  // Tenta encontrar usuário global existente ou cria um novo
+  const result = await prisma.$transaction(async (tx) => {
+    let globalUser = await tx.user.findUnique({ where: { email } })
+
+    if (globalUser) {
+      // Se já existe, apenas atualiza o status se necessário (opcional)
+      // globalUser = await tx.user.update({ where: { id: globalUser.id }, data: { statusId: globalUser.statusId || availableStatus?.id } })
+    } else {
+      globalUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          passwordHash,
+          statusId: availableStatus?.id
+        }
+      })
+    }
+
+    const membership = await tx.tenantUser.create({
+      data: {
+        userId: globalUser.id,
+        tenantId,
+        role: finalRole as Role,
+        isCreatedFromTenant: true
+      }
+    })
+
+    return { user: globalUser, membership }
   })
 
   await prisma.auditLog.create({
@@ -85,77 +144,37 @@ export const createUser = async (req: Request, res: Response) => {
       userId: requestingUserId,
       action: 'CREATE',
       entity: 'User',
-      entityId: user.id,
+      entityId: result.user.id,
       newData: { name, email, role: finalRole },
     },
   })
 
   return res.status(201).json({
-    user,
-    tempPassword,
-    message: 'Usuário criado com sucesso. A senha temporária deve ser fornecida ao usuário.',
+    user: {
+      ...result.user,
+      passwordHash: undefined,
+      role: result.membership.role
+    },
+    tempPassword: result.user.id === requestingUserId ? undefined : tempPassword,
+    message: 'Usuário adicionado à organização.',
   })
 }
 
 export const updateUser = async (req: Request, res: Response) => {
   const { tenantId, userId: requestingUserId } = req.user!
   const { name, avatarUrl } = req.body
-
-  const user = await prisma.user.update({
-    where: { id: req.params.id as string, tenantId },
-    data: { name, avatarUrl },
-    include: { status: true },
-    omit: { passwordHash: true },
-  })
-
-  await prisma.auditLog.create({
-    data: {
-      tenantId,
-      userId: requestingUserId,
-      action: 'UPDATE',
-      entity: 'User',
-      entityId: user.id,
-      newData: { name, avatarUrl },
-    },
-  })
-
-  return res.json(user)
-}
-
-export const updateRole = async (req: Request, res: Response) => {
-  const { tenantId, userId: requestingUserId } = req.user!
-  const { role } = req.body as { role: 'MANAGER' | 'SELLER' }
-
-  if (!role || !['MANAGER', 'SELLER'].includes(role)) {
-    throw new AppError('Cargo inválido. Use MANAGER ou SELLER.')
-  }
-
   const targetUserId = req.params.id as string
 
-  const requestingUser = await prisma.user.findUnique({
-    where: { id: requestingUserId },
+  // Verifica se pertence ao tenant
+  const membership = await prisma.tenantUser.findUnique({
+    where: { userId_tenantId: { userId: targetUserId, tenantId } }
   })
 
-  if (requestingUser?.role !== 'ADMIN') {
-    throw new AppError('Apenas administradores podem alterar cargos.')
-  }
-
-  const targetUser = await prisma.user.findFirst({
-    where: { id: targetUserId, tenantId },
-  })
-
-  if (!targetUser) {
-    throw new AppError('Usuário não encontrado.', 404)
-  }
-
-  if (targetUser.role === 'ADMIN') {
-    throw new AppError('Não é possível alterar o cargo do administrador.')
-  }
+  if (!membership) throw new AppError('Usuário não pertence a esta organização.', 404)
 
   const updatedUser = await prisma.user.update({
     where: { id: targetUserId },
-    data: { role: role as Role },
-    include: { status: true },
+    data: { name, avatarUrl },
     omit: { passwordHash: true },
   })
 
@@ -166,59 +185,111 @@ export const updateRole = async (req: Request, res: Response) => {
       action: 'UPDATE',
       entity: 'User',
       entityId: targetUserId,
-      oldData: { role: targetUser.role },
-      newData: { role },
+      newData: { name, avatarUrl },
     },
   })
 
   return res.json(updatedUser)
 }
 
+export const updateRole = async (req: Request, res: Response) => {
+  const { tenantId, userId: requestingUserId, role: requestingRole } = req.user!
+  const { role } = req.body as { role: 'ADMIN' | 'MANAGER' | 'SELLER' }
+
+  if (requestingRole !== 'ADMIN') {
+    throw new AppError('Apenas administradores podem alterar cargos.')
+  }
+
+  const targetUserId = req.params.id as string
+
+  const targetMembership = await prisma.tenantUser.findUnique({
+    where: { userId_tenantId: { userId: targetUserId, tenantId } }
+  })
+
+  if (!targetMembership) {
+    throw new AppError('Usuário não encontrado nesta organização.', 404)
+  }
+
+  if (targetMembership.isOwner && requestingUserId !== targetUserId) {
+    throw new AppError('Não é possível alterar o cargo do proprietário.')
+  }
+
+  const updatedMembership = await prisma.tenantUser.update({
+    where: { id: targetMembership.id },
+    data: { role: role as Role },
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      tenantId,
+      userId: requestingUserId,
+      action: 'UPDATE',
+      entity: 'TenantUser',
+      entityId: targetUserId,
+      oldData: { role: targetMembership.role },
+      newData: { role },
+    },
+  })
+
+  return res.json({ userId: targetUserId, role: updatedMembership.role })
+}
+
 export const updateStatus = async (req: Request, res: Response) => {
   const { tenantId } = req.user!
   const { statusId } = req.body
+  const targetUserId = req.params.id as string
 
   if (!statusId) throw new AppError('StatusId é obrigatório.')
 
+  // Verifica se o status pertence ao tenant
   const status = await prisma.userStatus.findFirst({
     where: { id: statusId, tenantId },
   })
-  if (!status) throw new AppError('Status não encontrado.', 404)
+  if (!status) throw new AppError('Status não encontrado para este tenant.', 404)
 
-  const user = await prisma.user.update({
-    where: { id: req.params.id as string, tenantId },
+  // Verifica vínculo
+  const membership = await prisma.tenantUser.findUnique({
+    where: { userId_tenantId: { userId: targetUserId, tenantId } },
+    include: { user: { omit: { passwordHash: true } }, status: true }
+  })
+
+  if (!membership) throw new AppError('Usuário não pertence a esta organização.', 404)
+
+  // Atualiza status no membership
+  const updated = await prisma.tenantUser.update({
+    where: { id: membership.id },
     data: { statusId },
-    include: { status: true },
-    omit: { passwordHash: true },
+    include: { status: true, user: { omit: { passwordHash: true } } }
   })
 
   emitToTenant(tenantId, 'user:status_changed', {
-    userId: user.id,
-    name: user.name,
-    status: user.status?.name,
+    userId: updated.userId,
+    name: updated.user.name,
+    status: updated.status?.name,
   })
 
-  return res.json(user)
+  return res.json({
+    userId: updated.user.id,
+    name: updated.user.name,
+    role: updated.role,
+    status: updated.status
+  })
 }
 
 export const resetPassword = async (req: Request, res: Response) => {
-  const { tenantId, userId: requestingUserId } = req.user!
+  const { tenantId, userId: requestingUserId, role: requestingRole } = req.user!
   const targetUserId = req.params.id as string
 
-  const requestingUser = await prisma.user.findUnique({
-    where: { id: requestingUserId },
-  })
-
-  if (requestingUser?.role !== 'ADMIN') {
+  if (requestingRole !== 'ADMIN') {
     throw new AppError('Apenas administradores podem resetar senhas.')
   }
 
-  const targetUser = await prisma.user.findFirst({
-    where: { id: targetUserId, tenantId },
+  const membership = await prisma.tenantUser.findUnique({
+    where: { userId_tenantId: { userId: targetUserId, tenantId } }
   })
 
-  if (!targetUser) {
-    throw new AppError('Usuário não encontrado.', 404)
+  if (!membership) {
+    throw new AppError('Usuário não encontrado nesta organização.', 404)
   }
 
   const newPassword = generateTempPassword()
@@ -243,44 +314,36 @@ export const resetPassword = async (req: Request, res: Response) => {
   return res.json({
     message: 'Senha resetada com sucesso.',
     tempPassword: newPassword,
-    user: {
-      id: targetUser.id,
-      name: targetUser.name,
-      email: targetUser.email,
-    },
   })
 }
 
 export const deleteUser = async (req: Request, res: Response) => {
-  const { tenantId, userId: requestingUserId } = req.user!
+  const { tenantId, userId: requestingUserId, role: requestingRole } = req.user!
   const targetUserId = req.params.id as string
 
-  const requestingUser = await prisma.user.findUnique({
-    where: { id: requestingUserId },
-  })
-
-  if (requestingUser?.role !== 'ADMIN') {
-    throw new AppError('Apenas administradores podem excluir usuários.')
+  if (requestingRole !== 'ADMIN') {
+    throw new AppError('Apenas administradores podem remover membros.')
   }
 
-  const targetUser = await prisma.user.findFirst({
-    where: { id: targetUserId, tenantId },
+  const targetMembership = await prisma.tenantUser.findUnique({
+    where: { userId_tenantId: { userId: targetUserId, tenantId } }
   })
 
-  if (!targetUser) {
-    throw new AppError('Usuário não encontrado.', 404)
+  if (!targetMembership) {
+    throw new AppError('Membro não encontrado.', 404)
   }
 
-  if (targetUser.role === 'ADMIN') {
-    throw new AppError('Não é possível excluir o administrador.')
+  if (targetMembership.isOwner) {
+    throw new AppError('Não é possível remover o proprietário da organização.')
   }
 
   if (targetUserId === requestingUserId) {
-    throw new AppError('Você não pode excluir seu próprio usuário.')
+    throw new AppError('Você não pode remover a si mesmo.')
   }
 
-  await prisma.user.update({
-    where: { id: targetUserId },
+  // Remove apenas o vínculo
+  await prisma.tenantUser.update({
+    where: { id: targetMembership.id },
     data: { active: false },
   })
 
@@ -289,7 +352,7 @@ export const deleteUser = async (req: Request, res: Response) => {
       tenantId,
       userId: requestingUserId,
       action: 'DELETE',
-      entity: 'User',
+      entity: 'TenantUser',
       entityId: targetUserId,
     },
   })

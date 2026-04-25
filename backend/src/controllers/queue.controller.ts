@@ -53,6 +53,7 @@ export function getLockReason(settings: QueueSettings): LockReason {
 
 export const getQueue = async (req: Request, res: Response) => {
   const { tenantId } = req.user!
+  console.log('[DEBUG getQueue] tenantId from req.user:', tenantId)
 
   const queue = await buildQueueSnapshot(tenantId)
   const settings = await getQueueSettings(tenantId)
@@ -70,26 +71,24 @@ export const getQueue = async (req: Request, res: Response) => {
 export const getQueueMe = async (req: Request, res: Response) => {
   const { tenantId, userId } = req.user!
 
+  // Buscar membership do usuário neste tenant
+  const membership = await prisma.tenantUser.findFirst({
+    where: { tenantId, userId },
+    include: {
+      queueEntry: true,
+      status: true
+    }
+  })
+
+  if (!membership) throw new AppError('Usuário não vinculado a esta organização', 404)
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
       name: true,
       email: true,
-      avatarUrl: true,
-      queuePosition: true,
-      queueEnteredAt: true,
-      queueOriginalPosition: true,
-      wasSkipped: true,
-      isIdle: true,
-      status: {
-        select: {
-          id: true,
-          name: true,
-          color: true,
-          meaning: true
-        }
-      }
+      avatarUrl: true
     }
   })
 
@@ -97,27 +96,45 @@ export const getQueueMe = async (req: Request, res: Response) => {
 
   const settings = await getQueueSettings(tenantId)
   const lockReason = getLockReason(settings)
-  const isInQueue = user.queuePosition !== null
-  const isTopOfQueue = isInQueue && user.queuePosition === 1
+  const entry = membership.queueEntry
+  const isInQueue = entry?.position !== null
+  const isTopOfQueue = isInQueue && entry?.position === 1
 
   return res.json({
     ...user,
+    role: membership.role,
+    isOwner: membership.isOwner,
+    active: membership.active,
+    queuePosition: entry?.position ?? null,
+    queueEnteredAt: entry?.enteredAt ?? null,
+    originalPosition: entry?.originalPosition ?? null,
+    wasSkipped: entry?.wasSkipped ?? false,
+    isIdle: entry?.isIdle ?? false,
     isInQueue,
     isTopOfQueue,
     canOpenTicket: isTopOfQueue && lockReason.type === null,
     isLocked: lockReason.type !== null,
-    lockReason
+    lockReason,
+    status: membership.status
   })
 }
 
 export const reconnectQueueUser = async (req: Request, res: Response) => {
-  const { userId } = req.user!
+  const { tenantId, userId } = req.user!
 
-  const result = await reconnectUser(userId)
+  // Buscar tenantUserId
+  const membership = await prisma.tenantUser.findFirst({
+    where: { tenantId, userId },
+    select: { id: true }
+  })
+
+  if (!membership) {
+    return res.json({ success: true, reconnected: false })
+  }
+
+  const result = await reconnectUser(membership.id)
 
   if (!result.success) {
-    // Usuário não está na fila - isso é normal quando o WebSocket reconecta
-    // e o usuário não estava na fila. Não é um erro.
     return res.json({ success: true, reconnected: false })
   }
 
@@ -126,6 +143,7 @@ export const reconnectQueueUser = async (req: Request, res: Response) => {
 
 export const joinQueue = async (req: Request, res: Response) => {
   const { tenantId, userId } = req.user!
+  console.log('[DEBUG joinQueue] tenantId:', tenantId, 'userId:', userId)
 
   const settings = await getQueueSettings(tenantId)
 
@@ -144,7 +162,17 @@ export const joinQueue = async (req: Request, res: Response) => {
     throw new AppError('Fila lotada. Tente novamente mais tarde.')
   }
 
-  const alreadyIn = await isUserInQueue(userId)
+  // Buscar membership
+  const membership = await prisma.tenantUser.findFirst({
+    where: { tenantId, userId },
+    include: { queueEntry: true }
+  })
+
+  if (!membership) {
+    throw new AppError('Usuário não vinculado a esta organização.', 404)
+  }
+
+  const alreadyIn = membership.queueEntry?.position !== null
   if (alreadyIn) {
     throw new AppError('Você já está na fila.')
   }
@@ -153,44 +181,45 @@ export const joinQueue = async (req: Request, res: Response) => {
   const availableStatus = await getAvailableStatus(tenantId)
   const awaitingStatus = await getAwaitingStatus(tenantId)
 
-  const updatedUser = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      queuePosition: nextPosition,
-      queueEnteredAt: new Date(),
-      statusId: nextPosition === 1 ? availableStatus.id : awaitingStatus.id,
+  // Criar ou atualizar QueueEntry
+  const entry = await prisma.queueEntry.upsert({
+    where: { tenantUserId: membership.id },
+    create: {
+      tenantUserId: membership.id,
+      position: nextPosition,
+      enteredAt: new Date(),
+      wasSkipped: false
+    },
+    update: {
+      position: nextPosition,
+      enteredAt: new Date(),
       wasSkipped: false,
       skippedAt: null
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      avatarUrl: true,
-      queuePosition: true,
-      queueEnteredAt: true,
-      wasSkipped: true,
-      status: {
-        select: {
-          id: true,
-          name: true,
-          color: true
-        }
-      }
     }
   })
 
+  // Atualizar status do membership
+  await prisma.tenantUser.update({
+    where: { id: membership.id },
+    data: { statusId: nextPosition === 1 ? availableStatus.id : awaitingStatus.id }
+  })
+
+  // Se não é o primeiro, atualizar quem era o primeiro
   if (nextPosition > 1) {
-    const previousTop = await prisma.user.findFirst({
+    const previousTop = await prisma.queueEntry.findFirst({
       where: {
-        tenantId,
-        queuePosition: 1,
-        active: true
-      }
+        AND: [
+        { tenantUser: { tenant: { id: tenantId } } },
+        { tenantUser: { tenantId: tenantId } }
+      ],
+        position: 1,
+        tenantUser: { active: true }
+      },
+      include: { tenantUser: true }
     })
     if (previousTop) {
-      await prisma.user.update({
-        where: { id: previousTop.id },
+      await prisma.tenantUser.update({
+        where: { id: previousTop.tenantUserId },
         data: { statusId: availableStatus.id }
       })
     }
@@ -199,22 +228,28 @@ export const joinQueue = async (req: Request, res: Response) => {
   const u = await prisma.user.findUnique({
     where: { id: userId },
     include: {
-      performances: { select: { score: true }, orderBy: { periodStart: 'desc' }, take: 1 },
-      status: { select: { id: true, name: true, color: true } }
+      tenants: {
+        where: { tenantId },
+        include: {
+          status: true,
+          queueEntry: true
+        }
+      }
     }
   })
   
+  const m = u?.tenants[0]
   const queueUser: QueueUser = {
-    id: u!.id,
+    id: userId,
     name: u!.name,
     email: u!.email,
     avatarUrl: u!.avatarUrl,
-    queuePosition: u!.queuePosition,
-    queueEnteredAt: u!.queueEnteredAt,
-    wasSkipped: u!.wasSkipped,
-    isIdle: u!.isIdle,
-    score: u!.performances[0]?.score ? Number(u!.performances[0].score) : null,
-    status: u!.status
+    queuePosition: m?.queueEntry?.position ?? null,
+    queueEnteredAt: m?.queueEntry?.enteredAt ?? null,
+    wasSkipped: m?.queueEntry?.wasSkipped ?? false,
+    isIdle: m?.queueEntry?.isIdle ?? false,
+    score: null,
+    status: m?.status ?? null
   }
 
   const positions = await getPositionMap(tenantId)
@@ -235,36 +270,44 @@ export const joinQueue = async (req: Request, res: Response) => {
     }
   })
 
-  return res.json(updatedUser)
+  return res.json(queueUser)
 }
 
 export const leaveQueue = async (req: Request, res: Response) => {
   const { tenantId, userId } = req.user!
   const { reason } = req.body as { reason?: 'manual' | 'completed' }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { queuePosition: true, queueEnteredAt: true }
+  // Buscar membership
+  const membership = await prisma.tenantUser.findFirst({
+    where: { tenantId, userId },
+    include: { queueEntry: true, status: true }
   })
 
-  if (!user || user.queuePosition === null) {
+  if (!membership || membership.queueEntry?.position === null) {
     throw new AppError('Você não está na fila.')
   }
 
+  const entry = membership.queueEntry
   const offlineStatus = await getOfflineStatus(tenantId)
   const settings = await getQueueSettings(tenantId)
 
-  await prisma.user.update({
-    where: { id: userId },
+  // Atualizar QueueEntry
+  await prisma.queueEntry.update({
+    where: { id: entry.id },
     data: {
-      queuePosition: null,
-      queueEnteredAt: settings.strategy === 'FIFO' ? user.queueEnteredAt : null,
-      queueOriginalPosition: null,
+      position: null,
+      enteredAt: settings.strategy === 'FIFO' ? entry.enteredAt : null,
+      originalPosition: null,
       wasSkipped: false,
       skippedAt: null,
-      isIdle: false,
-      statusId: offlineStatus.id
+      isIdle: false
     }
+  })
+
+  // Atualizar status do membership
+  await prisma.tenantUser.update({
+    where: { id: membership.id },
+    data: { statusId: offlineStatus.id }
   })
 
   await reorderQueueAfterLeave(tenantId)
@@ -281,16 +324,23 @@ export const leaveQueue = async (req: Request, res: Response) => {
   })
 
   const positions = await getPositionMap(tenantId)
-  const newTopUser = await prisma.user.findFirst({
-    where: { tenantId, queuePosition: 1, active: true },
-    select: { id: true }
+  const newTopEntry = await prisma.queueEntry.findFirst({
+    where: {
+      AND: [
+        { tenantUser: { tenant: { id: tenantId } } },
+        { tenantUser: { tenantId: tenantId } }
+      ],
+      position: 1,
+      tenantUser: { active: true }
+    },
+    include: { tenantUser: { include: { user: { select: { id: true } } } } }
   })
 
   emitToTenant(tenantId, 'queue:user_left', {
     userId,
     reason: reason || 'manual',
     positions,
-    newTopUserId: newTopUser?.id || null
+    newTopUserId: newTopEntry?.tenantUser.user.id || null
   })
   emitToTenant(tenantId, 'user:status_changed', {
     userId,
@@ -648,12 +698,12 @@ export const getQueueConfig = async (req: Request, res: Response) => {
 export const updateQueueConfig = async (req: Request, res: Response) => {
   const { tenantId, userId } = req.user!
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  const membership = await prisma.tenantUser.findUnique({
+    where: { userId_tenantId: { userId, tenantId } },
     select: { role: true }
   })
 
-  if (user?.role !== 'ADMIN' && user?.role !== 'MANAGER') {
+  if (membership?.role !== 'ADMIN' && membership?.role !== 'MANAGER') {
     throw new AppError('Apenas gestores podem alterar as configurações.')
   }
 
@@ -674,44 +724,51 @@ export const updateQueueConfig = async (req: Request, res: Response) => {
 async function reorderQueueAfterLeave(tenantId: string): Promise<void> {
   const settings = await getQueueSettings(tenantId)
 
-  let orderBy: any = { queueEnteredAt: 'asc' }
+  let orderBy: any = { enteredAt: 'asc' }
 
   if (settings.strategy === 'PERFORMANCE') {
-    orderBy = { performances: { score: 'desc' } }
+    orderBy = { tenantUser: { user: { performances: { score: 'desc' } } } }
   } else if (settings.strategy === 'HYBRID') {
     orderBy = [
-      { performances: { score: 'desc' } },
-      { queueEnteredAt: 'asc' }
+      { tenantUser: { user: { performances: { score: 'desc' } } } },
+      { enteredAt: 'asc' }
     ]
   }
 
-  const usersInQueue = await prisma.user.findMany({
+  const entriesInQueue = await prisma.queueEntry.findMany({
     where: {
-      tenantId,
-      queuePosition: { not: null },
-      active: true
+      AND: [
+        { tenantUser: { tenant: { id: tenantId } } },
+        { tenantUser: { tenantId: tenantId } }
+      ],
+      position: { not: null },
+      tenantUser: { active: true }
     },
     orderBy,
     include: {
-      performances: {
-        select: { score: true }
+      tenantUser: {
+        include: {
+          user: {
+            select: { performances: { select: { score: true } } }
+          }
+        }
       }
     }
   })
 
   await prisma.$transaction(
-    usersInQueue.map((user, index) =>
-      prisma.user.update({
-        where: { id: user.id },
-        data: { queuePosition: index + 1 }
+    entriesInQueue.map((entry, index) =>
+      prisma.queueEntry.update({
+        where: { id: entry.id },
+        data: { position: index + 1 }
       })
     )
   )
 
-  if (usersInQueue.length > 0) {
+  if (entriesInQueue.length > 0) {
     const availableStatus = await getAvailableStatus(tenantId)
-    await prisma.user.update({
-      where: { id: usersInQueue[0].id },
+    await prisma.tenantUser.update({
+      where: { id: entriesInQueue[0].tenantUserId },
       data: { statusId: availableStatus.id }
     })
   }
