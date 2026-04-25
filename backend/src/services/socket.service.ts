@@ -27,24 +27,24 @@ export const initSocket = (httpServer: HttpServer) => {
     },
   })
 
-  // Carregar lastQueuePing do DB para o Map em memória
+  // Carregar lastPing do DB para o Map em memória
   const loadLastQueuePings = async () => {
     try {
-      const usersWithPing = await prisma.user.findMany({
+      const entriesWithPing = await prisma.queueEntry.findMany({
         where: {
-          lastQueuePing: { not: null },
-          queuePosition: { not: null }
+          lastPing: { not: null },
+          position: { not: null }
         },
-        select: { id: true, lastQueuePing: true }
+        include: { tenantUser: { select: { user: { select: { id: true } } } } }
       })
-      for (const user of usersWithPing) {
-        if (user.lastQueuePing) {
-          connectedUsers.set(user.id, user.lastQueuePing.getTime())
+      for (const entry of entriesWithPing) {
+        if (entry.lastPing) {
+          connectedUsers.set(entry.tenantUser.user.id, entry.lastPing.getTime())
         }
       }
-      logger.info(`Carregados ${connectedUsers.size} lastQueuePings do DB`, { module: 'WS' })
+      logger.info(`Carregados ${connectedUsers.size} lastPings do DB`, { module: 'WS' })
     } catch (error) {
-      logger.error(`Erro ao carregar lastQueuePings`, { module: 'WS', error })
+      logger.error(`Erro ao carregar lastPings`, { module: 'WS', error })
     }
   }
   loadLastQueuePings()
@@ -101,15 +101,53 @@ export const initSocket = (httpServer: HttpServer) => {
       connectedUsers.delete(user.userId)
     })
 
-    // Heartbeat para manter usuário como ativo
+// Heartbeat para manter usuário como ativo
     socket.on('user:heartbeat', async () => {
       const now = Date.now()
       connectedUsers.set(user.userId, now)
       try {
-        await prisma.user.update({
-          where: { id: user.userId },
-          data: { lastQueuePing: new Date(now) }
+        // Buscar tenantUser e atualizar queueEntry
+        const membership = await prisma.tenantUser.findFirst({
+          where: { tenantId: user.tenantId, userId: user.userId },
+          select: { id: true }
         })
+        if (membership) {
+          await prisma.queueEntry.upsert({
+            where: { tenantUserId: membership.id },
+            create: {
+              tenantUserId: membership.id,
+              lastPing: new Date(now)
+            },
+            update: {
+              lastPing: new Date(now)
+            }
+          })
+        }
+      } catch (error) {
+        logger.error(`Erro ao salvar heartbeat ping`, { module: 'WS', user: user.name, error })
+      }
+    })
+
+    // Usuário indica que está Indo offline (mudança de rota/fechar)
+    socket.on('user:offline', async () => {
+      logger.warn(`Usuário está Indo offline`, { module: 'WS', user: user.name })
+      connectedUsers.delete(user.userId)
+      try {
+        const membership = await prisma.tenantUser.findFirst({
+          where: { tenantId: user.tenantId, userId: user.userId },
+          select: { id: true }
+        })
+        if (membership) {
+          await prisma.queueEntry.upsert({
+            where: { tenantUserId: membership.id },
+            create: {
+              tenantUserId: membership.id
+            },
+            update: {
+              lastPing: null
+            }
+          })
+        }
       } catch (error) {
         logger.error(`Erro ao salvar heartbeat ping`, { module: 'WS', user: user.name, error })
       }
@@ -120,10 +158,16 @@ export const initSocket = (httpServer: HttpServer) => {
       logger.warn(`Usuário está indo offline`, { module: 'WS', user: user.name })
       connectedUsers.delete(user.userId)
       try {
-        await prisma.user.update({
-          where: { id: user.userId },
-          data: { lastQueuePing: null }
+        const membership = await prisma.tenantUser.findFirst({
+          where: { tenantId: user.tenantId, userId: user.userId },
+          select: { id: true }
         })
+        if (membership) {
+          await prisma.queueEntry.update({
+            where: { tenantUserId: membership.id },
+            data: { lastPing: null }
+          })
+        }
       } catch (error) {
         logger.error(`Erro ao limpar ping`, { module: 'WS', user: user.name, error })
       }

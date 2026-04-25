@@ -103,14 +103,17 @@ async function processTenantSchedule(tenantId: string): Promise<void> {
 }
 
 async function clearQueue(tenantId: string): Promise<void> {
-  await prisma.user.updateMany({
+  await prisma.queueEntry.updateMany({
     where: {
-      tenantId,
-      queuePosition: { not: null }
+      AND: [
+        { tenantUser: { tenant: { id: tenantId } } },
+        { tenantUser: { tenantId: tenantId } }
+      ],
+      position: { not: null }
     },
     data: {
-      queuePosition: null,
-      queueEnteredAt: null,
+      position: null,
+      enteredAt: null,
       wasSkipped: false,
       skippedAt: null
     }
