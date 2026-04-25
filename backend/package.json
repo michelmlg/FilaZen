@@ -1,7 +1,7 @@
 {
   "name": "filazen-backend",
   "version": "1.0.0",
-  "description": "FilaZen SaaS - Backend API",
+  "description": "FilaZen - Backend API",
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon -L --watch src --ext ts --exec tsx src/server.ts",
