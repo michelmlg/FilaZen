@@ -8,6 +8,7 @@ export interface TeamUser {
   name: string
   email: string
   role: 'ADMIN' | 'MANAGER' | 'SELLER'
+  isOwner?: boolean
   avatarUrl?: string | null
   statusId?: string | null
   queuePosition?: number | null

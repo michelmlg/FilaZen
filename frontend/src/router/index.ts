@@ -5,6 +5,7 @@ import AuthLayout from '@/layouts/AuthLayout.vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
+import SelectTenantView from '@/views/SelectTenantView.vue'
 import QueueSettingsView from '@/views/QueueSettingsView.vue'
 
 const router = createRouter({
@@ -31,6 +32,18 @@ const router = createRouter({
         {
           path: '',
           component: RegisterView,
+        },
+      ],
+    },
+    {
+      path: '/select-tenant',
+      name: 'select-tenant',
+      component: AuthLayout,
+      meta: { requiresAuth: true, allowPendingTenants: true },
+      children: [
+        {
+          path: '',
+          component: SelectTenantView,
         },
       ],
     },
@@ -90,6 +103,12 @@ router.beforeEach(async (to, _from) => {
   }
 
   const isAuth = auth.isAuthenticated
+  const hasPendingTenants = auth.pendingTenants.length > 0
+
+  // Allow select-tenant route when user has pending tenants (no token yet)
+  if (to.path === '/select-tenant' && hasPendingTenants) {
+    return true
+  }
 
   if (to.meta.requiresAuth && !isAuth) {
     return '/login'
