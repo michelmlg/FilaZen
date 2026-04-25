@@ -148,28 +148,34 @@ function timeToMinutes(time: string): number {
 }
 
 export async function getQueueSize(tenantId: string): Promise<number> {
-  return prisma.user.count({
+  return prisma.queueEntry.count({
     where: {
-      tenantId,
-      queuePosition: { not: null },
-      active: true
+      AND: [
+      { tenantUser: { tenant: { id: tenantId } } },
+      { tenantUser: { tenantId: tenantId } }
+    ],
+      position: { not: null },
+      tenantUser: { active: true }
     }
   })
 }
 
 export async function getLastQueuePosition(tenantId: string): Promise<number> {
-  const last = await prisma.user.findFirst({
+  const last = await prisma.queueEntry.findFirst({
     where: {
-      tenantId,
-      queuePosition: { not: null },
-      active: true,
+      AND: [
+      { tenantUser: { tenant: { id: tenantId } } },
+      { tenantUser: { tenantId: tenantId } }
+    ],
+      position: { not: null },
+      tenantUser: { active: true },
       isIdle: false
     },
-    orderBy: { queuePosition: 'desc' },
-    select: { queuePosition: true }
+    orderBy: { position: 'desc' },
+    select: { position: true }
   })
   
-  return last?.queuePosition ?? 0
+  return last?.position ?? 0
 }
 
 export async function getAvailableStatus(tenantId: string) {
@@ -269,55 +275,62 @@ export async function getOfflineStatus(tenantId: string) {
   return status
 }
 
-export async function isUserInQueue(userId: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { queuePosition: true }
+export async function isUserInQueue(tenantUserId: string): Promise<boolean> {
+  const entry = await prisma.queueEntry.findUnique({
+    where: { tenantUserId },
+    select: { position: true }
   })
   
-  return user?.queuePosition !== null
+  return entry?.position !== null
 }
 
-export async function getUserQueuePosition(userId: string): Promise<number | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { queuePosition: true }
+export async function getUserQueuePosition(tenantUserId: string): Promise<number | null> {
+  const entry = await prisma.queueEntry.findUnique({
+    where: { tenantUserId },
+    select: { position: true }
   })
   
-  return user?.queuePosition ?? null
+  return entry?.position ?? null
 }
 
 export async function reorderQueue(tenantId: string, strategy: QueueStrategy): Promise<void> {
-  let orderBy: any = { queueEnteredAt: 'asc' }
+  let orderBy: any = { enteredAt: 'asc' }
 
   if (strategy === 'PERFORMANCE') {
-    orderBy = { performances: { score: 'desc' } }
+    orderBy = { tenantUser: { user: { performances: { score: 'desc' } } } }
   } else if (strategy === 'HYBRID') {
     orderBy = [
-      { performances: { score: 'desc' } },
-      { queueEnteredAt: 'asc' }
+      { tenantUser: { user: { performances: { score: 'desc' } } } },
+      { enteredAt: 'asc' }
     ]
   }
 
-  const usersInQueue = await prisma.user.findMany({
+  const entriesInQueue = await prisma.queueEntry.findMany({
     where: {
-      tenantId,
-      queuePosition: { not: null },
-      active: true
+      AND: [
+      { tenantUser: { tenant: { id: tenantId } } },
+      { tenantUser: { tenantId: tenantId } }
+    ],
+      position: { not: null },
+      tenantUser: { active: true }
     },
     orderBy,
     include: {
-      performances: {
-        select: { score: true }
+      tenantUser: {
+        include: {
+          user: {
+            select: { performances: { select: { score: true } } }
+          }
+        }
       }
     }
   })
 
   await prisma.$transaction(
-    usersInQueue.map((user, index) =>
-      prisma.user.update({
-        where: { id: user.id },
-        data: { queuePosition: index + 1 }
+    entriesInQueue.map((entry, index) =>
+      prisma.queueEntry.update({
+        where: { id: entry.id },
+        data: { position: index + 1 }
       })
     )
   )
@@ -341,48 +354,38 @@ export interface QueueUser {
 }
 
 export async function buildQueueSnapshot(tenantId: string): Promise<QueueUser[]> {
-  const users = await prisma.user.findMany({
+  console.log('[DEBUG buildQueueSnapshot] tenantId:', tenantId)
+  const entries = await prisma.queueEntry.findMany({
     where: {
-      tenantId,
-      queuePosition: { not: null },
-      active: true
+      AND: [
+      { tenantUser: { tenant: { id: tenantId } } },
+      { tenantUser: { tenantId: tenantId } }
+    ],
+      position: { not: null },
+      tenantUser: { active: true }
     },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      avatarUrl: true,
-      queuePosition: true,
-      queueEnteredAt: true,
-      wasSkipped: true,
-      isIdle: true,
-      performances: {
-        select: { score: true },
-        orderBy: { periodStart: 'desc' },
-        take: 1
-      },
-      status: {
-        select: {
-          id: true,
-          name: true,
-          color: true
+    include: {
+      tenantUser: {
+        include: {
+          user: { omit: { passwordHash: true } },
+          status: true
         }
       }
     },
-    orderBy: { queuePosition: 'asc' }
+    orderBy: { position: 'asc' }
   })
   
-  return users.map(u => ({
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    avatarUrl: u.avatarUrl,
-    queuePosition: u.queuePosition,
-    queueEnteredAt: u.queueEnteredAt,
-    wasSkipped: u.wasSkipped,
-    isIdle: u.isIdle,
-    score: u.performances[0]?.score ? Number(u.performances[0].score) : null,
-    status: u.status
+  return entries.map(e => ({
+    id: e.tenantUser.user.id,
+    name: e.tenantUser.user.name,
+    email: e.tenantUser.user.email,
+    avatarUrl: e.tenantUser.user.avatarUrl,
+    queuePosition: e.position,
+    queueEnteredAt: e.enteredAt,
+    wasSkipped: e.wasSkipped,
+    isIdle: e.isIdle,
+    score: e.tenantUser.user.performances?.[0]?.score ? Number(e.tenantUser.user.performances[0].score) : null,
+    status: e.tenantUser.status
   }))
 }
 
@@ -391,38 +394,43 @@ export async function buildQueueSnapshot(tenantId: string): Promise<QueueUser[]>
  * Used in WS events to update positions without sending full user data.
  */
 export async function getPositionMap(tenantId: string): Promise<{ id: string; position: number }[]> {
-  const users = await prisma.user.findMany({
+  const entries = await prisma.queueEntry.findMany({
     where: {
-      tenantId,
-      queuePosition: { not: null },
-      active: true
+      AND: [
+      { tenantUser: { tenant: { id: tenantId } } },
+      { tenantUser: { tenantId: tenantId } }
+    ],
+      position: { not: null },
+      tenantUser: { active: true }
     },
-    select: {
-      id: true,
-      queuePosition: true
+    include: {
+      tenantUser: {
+        include: { user: true }
+      }
     },
-    orderBy: { queuePosition: 'asc' }
+    orderBy: { position: 'asc' }
   })
   
-  return users.map(u => ({ id: u.id, position: u.queuePosition! }))
+  return entries.map(e => ({ id: e.tenantUser.user.id, position: e.position! }))
 }
 
 export async function checkIdleUsers(tenantId: string): Promise<void> {
   const settings = await getQueueSettings(tenantId)
   const connectedUsers = getConnectedUsers()
   
-  const usersInQueue = await prisma.user.findMany({
+  const entriesInQueue = await prisma.queueEntry.findMany({
     where: {
-      tenantId,
-      queuePosition: { not: null },
-      active: true
+      AND: [
+      { tenantUser: { tenant: { id: tenantId } } },
+      { tenantUser: { tenantId: tenantId } }
+    ],
+      position: { not: null },
+      tenantUser: { active: true }
     },
-    select: {
-      id: true,
-      queuePosition: true,
-      queueOriginalPosition: true,
-      isIdle: true,
-      lastQueuePing: true
+    include: {
+      tenantUser: {
+        include: { user: true }
+      }
     }
   })
 
@@ -432,35 +440,36 @@ export async function checkIdleUsers(tenantId: string): Promise<void> {
 
   const now = new Date()
 
-  for (const user of usersInQueue) {
-    // Verificar primeiro no Map (memória), depois no DB (lastQueuePing)
-    const lastConnected = connectedUsers.get(user.id)
-    const lastPing = user.lastQueuePing?.getTime()
+  for (const entry of entriesInQueue) {
+    const userId = entry.tenantUser.user.id
+    // Verificar primeiro no Map (memória), depois no DB (lastPing)
+    const lastConnected = connectedUsers.get(userId)
+    const lastPing = entry.lastPing?.getTime()
     // Usa o mais recente entre Map e DB
     const lastActive = lastConnected || lastPing
     const isConnected = lastActive && (now.getTime() - lastActive) < timeoutMs
     
-    if (!isConnected && user.queuePosition !== null) {
+    if (!isConnected && entry.position !== null) {
       if (settings.idleBehavior === 'remove') {
-        await prisma.user.update({
-          where: { id: user.id },
+        await prisma.queueEntry.update({
+          where: { id: entry.id },
           data: {
-            queuePosition: null,
-            queueEnteredAt: null,
-            queueOriginalPosition: null,
+            position: null,
+            enteredAt: null,
+            originalPosition: null,
             isIdle: false
           }
         })
-        emitToTenant(tenantId, 'queue:user_removed', { userId: user.id })
-      } else if (settings.idleBehavior === 'maintain_position' && !user.isIdle) {
-        await prisma.user.update({
-          where: { id: user.id },
+        emitToTenant(tenantId, 'queue:user_removed', { userId })
+      } else if (settings.idleBehavior === 'maintain_position' && !entry.isIdle) {
+        await prisma.queueEntry.update({
+          where: { id: entry.id },
           data: {
             isIdle: true,
-            queueOriginalPosition: user.queuePosition
+            originalPosition: entry.position
           }
         })
-        emitToTenant(tenantId, 'queue:user_away', { userId: user.id })
+        emitToTenant(tenantId, 'queue:user_away', { userId })
       }
     }
   }
@@ -474,15 +483,18 @@ export async function checkIdleUsers(tenantId: string): Promise<void> {
 
 function reorderQueueBasedOnIdle(tenantId: string): Promise<void> {
   return prisma.$transaction(async () => {
-    const usersInQueue = await prisma.user.findMany({
+    const entriesInQueue = await prisma.queueEntry.findMany({
       where: {
-        tenantId,
-        queuePosition: { not: null },
-        active: true
+        AND: [
+      { tenantUser: { tenant: { id: tenantId } } },
+      { tenantUser: { tenantId: tenantId } }
+    ],
+        position: { not: null },
+        tenantUser: { active: true }
       },
       orderBy: [
         { isIdle: 'asc' },
-        { queueEnteredAt: 'asc' }
+        { enteredAt: 'asc' }
       ],
       select: {
         id: true,
@@ -490,46 +502,46 @@ function reorderQueueBasedOnIdle(tenantId: string): Promise<void> {
       }
     })
 
-    const activeUsers = usersInQueue.filter((u) => !u.isIdle)
-    const idleUsers = usersInQueue.filter((u) => u.isIdle)
+    const activeEntries = entriesInQueue.filter((e) => !e.isIdle)
+    const idleEntries = entriesInQueue.filter((e) => e.isIdle)
 
     let position = 1
-    for (const user of activeUsers) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { queuePosition: position++ }
+    for (const entry of activeEntries) {
+      await prisma.queueEntry.update({
+        where: { id: entry.id },
+        data: { position: position++ }
       })
     }
 
     const startIdlePosition = position
-    for (let i = 0; i < idleUsers.length; i++) {
-      await prisma.user.update({
-        where: { id: idleUsers[i].id },
-        data: { queuePosition: startIdlePosition + i }
+    for (let i = 0; i < idleEntries.length; i++) {
+      await prisma.queueEntry.update({
+        where: { id: idleEntries[i].id },
+        data: { position: startIdlePosition + i }
       })
     }
   })
 }
 
-export async function reconnectUser(userId: string): Promise<{ success: boolean; tenantId?: string }> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { tenantId: true, queuePosition: true, queueOriginalPosition: true, isIdle: true }
+export async function reconnectUser(tenantUserId: string): Promise<{ success: boolean; tenantId?: string }> {
+  const entry = await prisma.queueEntry.findUnique({
+    where: { tenantUserId },
+    include: { tenantUser: { select: { tenantId: true, active: true } } }
   })
 
-  if (!user || user.queuePosition === null) {
+  if (!entry || entry.position === null || !entry.tenantUser?.active) {
     return { success: false }
   }
 
-  const tenantId = user.tenantId
+  const tenantId = entry.tenantUser.tenantId
 
-  if (user.isIdle && user.queueOriginalPosition !== null) {
-    await prisma.user.update({
-      where: { id: userId },
+  if (entry.isIdle && entry.originalPosition !== null) {
+    await prisma.queueEntry.update({
+      where: { tenantUserId },
       data: {
         isIdle: false,
-        queuePosition: user.queueOriginalPosition,
-        queueOriginalPosition: null
+        position: entry.originalPosition,
+        originalPosition: null
       }
     })
 
@@ -537,8 +549,8 @@ export async function reconnectUser(userId: string): Promise<{ success: boolean;
     
     const positions = await getPositionMap(tenantId)
     emitToTenant(tenantId, 'queue:user_reconnected', {
-      userId,
-      position: user.queueOriginalPosition,
+      userId: entry.tenantUser.user.id,
+      position: entry.originalPosition,
       positions
     })
   }
@@ -547,22 +559,25 @@ export async function reconnectUser(userId: string): Promise<{ success: boolean;
 }
 
 async function reorderQueueByActiveUsers(tenantId: string): Promise<void> {
-  const usersInQueue = await prisma.user.findMany({
+  const entriesInQueue = await prisma.queueEntry.findMany({
     where: {
-      tenantId,
-      queuePosition: { not: null },
-      active: true,
+      AND: [
+      { tenantUser: { tenant: { id: tenantId } } },
+      { tenantUser: { tenantId: tenantId } }
+    ],
+      position: { not: null },
+      tenantUser: { active: true },
       isIdle: false
     },
-    orderBy: { queueEnteredAt: 'asc' },
+    orderBy: { enteredAt: 'asc' },
     select: { id: true }
   })
 
   await prisma.$transaction(
-    usersInQueue.map((user, index) =>
-      prisma.user.update({
-        where: { id: user.id },
-        data: { queuePosition: index + 1 }
+    entriesInQueue.map((entry, index) =>
+      prisma.queueEntry.update({
+        where: { id: entry.id },
+        data: { position: index + 1 }
       })
     )
   )

@@ -3,7 +3,6 @@ import { prisma } from '../utils/prisma'
 import { AppError } from '../middlewares/error.middleware'
 import { emitToTenant } from '../services/socket.service'
 
-// Helper para gerar próximo número sequencial de ticket por tenant
 const getNextTicketNumber = async (tenantId: string): Promise<number> => {
   const last = await prisma.ticket.findFirst({
     where: { tenantId },
@@ -15,24 +14,41 @@ const getNextTicketNumber = async (tenantId: string): Promise<number> => {
 
 export const listTickets = async (req: Request, res: Response) => {
   const { tenantId } = req.user!
-  const { status, userId, customerId } = req.query
+  const { status, tenantUserId, customerId } = req.query
 
   const tickets = await prisma.ticket.findMany({
     where: {
       tenantId,
       ...(status ? { status: status as any } : {}),
-      ...(userId ? { userId: String(userId) } : {}),
+      ...(tenantUserId ? { tenantUserId: String(tenantUserId) } : {}),
       ...(customerId ? { customerId: String(customerId) } : {}),
     },
     include: {
-      user: { omit: { passwordHash: true } },
+      tenantUser: {
+        include: {
+          user: { omit: { passwordHash: true } }
+        }
+      },
       customer: true,
       _count: { select: { events: true } },
     },
     orderBy: { createdAt: 'desc' },
   })
 
-  return res.json(tickets)
+  const flattenedTickets = tickets.map(t => ({
+    ...t,
+    userId: t.tenantUser?.userId,
+    user: t.tenantUser ? {
+      id: t.tenantUser.user.id,
+      name: t.tenantUser.user.name,
+      email: t.tenantUser.user.email,
+      avatarUrl: t.tenantUser.user.avatarUrl,
+      role: t.tenantUser.role
+    } : null,
+    tenantUser: undefined
+  }))
+
+  return res.json(flattenedTickets)
 }
 
 export const getTicket = async (req: Request, res: Response) => {
@@ -40,18 +56,44 @@ export const getTicket = async (req: Request, res: Response) => {
   const ticket = await prisma.ticket.findFirst({
     where: { id: req.params.id as string, tenantId },
     include: {
-      user: { omit: { passwordHash: true } },
+      tenantUser: {
+        include: {
+          user: { omit: { passwordHash: true } }
+        }
+      },
       customer: { include: { tags: { include: { tag: true } } } },
       events: { orderBy: { createdAt: 'asc' } },
     },
   })
   if (!ticket) throw new AppError('Ticket não encontrado.', 404)
-  return res.json(ticket)
+
+  const flattened = {
+    ...ticket,
+    userId: ticket.tenantUser?.userId,
+    user: ticket.tenantUser ? {
+      id: ticket.tenantUser.user.id,
+      name: ticket.tenantUser.user.name,
+      email: ticket.tenantUser.user.email,
+      avatarUrl: ticket.tenantUser.user.avatarUrl,
+      role: ticket.tenantUser.role
+    } : null,
+    tenantUser: undefined
+  }
+  return res.json(flattened)
 }
 
 export const createTicket = async (req: Request, res: Response) => {
   const { tenantId, userId } = req.user!
   const { customerId, title, description, estimatedValue, metadata } = req.body
+
+  const membership = await prisma.tenantUser.findFirst({
+    where: { tenantId, userId },
+    select: { id: true }
+  })
+
+  if (!membership) {
+    throw new AppError('Usuário não vinculado a esta organização.', 404)
+  }
 
   const number = await getNextTicketNumber(tenantId)
 
@@ -63,18 +105,19 @@ export const createTicket = async (req: Request, res: Response) => {
       description,
       estimatedValue,
       metadata,
-      userId,
+      tenantUserId: membership.id,
       customerId,
       status: 'IN_PROGRESS',
       acceptedAt: new Date(),
     },
     include: {
-      user: { omit: { passwordHash: true } },
+      tenantUser: {
+        include: { user: { omit: { passwordHash: true } } }
+      },
       customer: true,
     },
   })
 
-  // Audit log
   await prisma.auditLog.create({
     data: {
       tenantId,
@@ -86,10 +129,21 @@ export const createTicket = async (req: Request, res: Response) => {
     },
   })
 
-  // Emite novo ticket para o tenant
   emitToTenant(tenantId, 'ticket:created', ticket)
 
-  return res.status(201).json(ticket)
+  const flattened = {
+    ...ticket,
+    userId: ticket.tenantUser?.userId,
+    user: ticket.tenantUser ? {
+      id: ticket.tenantUser.user.id,
+      name: ticket.tenantUser.user.name,
+      email: ticket.tenantUser.user.email,
+      avatarUrl: ticket.tenantUser.user.avatarUrl,
+      role: ticket.tenantUser.role
+    } : null,
+    tenantUser: undefined
+  }
+  return res.status(201).json(flattened)
 }
 
 export const updateTicket = async (req: Request, res: Response) => {
@@ -102,7 +156,12 @@ export const updateTicket = async (req: Request, res: Response) => {
   const ticket = await prisma.ticket.update({
     where: { id: req.params.id as string, tenantId },
     data: { title, description, estimatedValue, finalValue, customerId, metadata },
-    include: { user: { omit: { passwordHash: true } }, customer: true },
+    include: {
+      tenantUser: {
+        include: { user: { omit: { passwordHash: true } } }
+      },
+      customer: true
+    },
   })
 
   await prisma.auditLog.create({
@@ -114,16 +173,43 @@ export const updateTicket = async (req: Request, res: Response) => {
   })
 
   emitToTenant(tenantId, 'ticket:updated', ticket)
-  return res.json(ticket)
+
+  const flattened = {
+    ...ticket,
+    userId: ticket.tenantUser?.userId,
+    user: ticket.tenantUser ? {
+      id: ticket.tenantUser.user.id,
+      name: ticket.tenantUser.user.name,
+      email: ticket.tenantUser.user.email,
+      avatarUrl: ticket.tenantUser.user.avatarUrl,
+      role: ticket.tenantUser.role
+    } : null,
+    tenantUser: undefined
+  }
+  return res.json(flattened)
 }
 
 export const acceptTicket = async (req: Request, res: Response) => {
   const { tenantId, userId } = req.user!
 
+  const membership = await prisma.tenantUser.findFirst({
+    where: { tenantId, userId },
+    select: { id: true }
+  })
+
+  if (!membership) {
+    throw new AppError('Usuário não vinculado a esta organização.', 404)
+  }
+
   const ticket = await prisma.ticket.update({
     where: { id: req.params.id as string, tenantId },
-    data: { status: 'IN_PROGRESS', userId, acceptedAt: new Date() },
-    include: { user: { omit: { passwordHash: true } }, customer: true },
+    data: { status: 'IN_PROGRESS', tenantUserId: membership.id, acceptedAt: new Date() },
+    include: {
+      tenantUser: {
+        include: { user: { omit: { passwordHash: true } } }
+      },
+      customer: true
+    },
   })
 
   await prisma.ticketEvent.create({
@@ -131,7 +217,20 @@ export const acceptTicket = async (req: Request, res: Response) => {
   })
 
   emitToTenant(tenantId, 'ticket:accepted', ticket)
-  return res.json(ticket)
+
+  const flattened = {
+    ...ticket,
+    userId: ticket.tenantUser?.userId,
+    user: ticket.tenantUser ? {
+      id: ticket.tenantUser.user.id,
+      name: ticket.tenantUser.user.name,
+      email: ticket.tenantUser.user.email,
+      avatarUrl: ticket.tenantUser.user.avatarUrl,
+      role: ticket.tenantUser.role
+    } : null,
+    tenantUser: undefined
+  }
+  return res.json(flattened)
 }
 
 export const closeTicket = async (req: Request, res: Response) => {
@@ -147,7 +246,12 @@ export const closeTicket = async (req: Request, res: Response) => {
       finalValue,
       ...(finalStatus === 'DONE' ? { completedAt: new Date() } : { cancelledAt: new Date() }),
     },
-    include: { user: { omit: { passwordHash: true } }, customer: true },
+    include: {
+      tenantUser: {
+        include: { user: { omit: { passwordHash: true } } }
+      },
+      customer: true
+    },
   })
 
   await prisma.ticketEvent.create({
@@ -164,7 +268,20 @@ export const closeTicket = async (req: Request, res: Response) => {
   })
 
   emitToTenant(tenantId, 'ticket:closed', ticket)
-  return res.json(ticket)
+
+  const flattened = {
+    ...ticket,
+    userId: ticket.tenantUser?.userId,
+    user: ticket.tenantUser ? {
+      id: ticket.tenantUser.user.id,
+      name: ticket.tenantUser.user.name,
+      email: ticket.tenantUser.user.email,
+      avatarUrl: ticket.tenantUser.user.avatarUrl,
+      role: ticket.tenantUser.role
+    } : null,
+    tenantUser: undefined
+  }
+  return res.json(flattened)
 }
 
 export const addEvent = async (req: Request, res: Response) => {

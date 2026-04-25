@@ -175,9 +175,8 @@ export async function calculatePositionByScore(
   const higherScores = await prisma.userPerformance.count({
     where: {
       user: {
-        tenantId,
-        active: true,
-        queuePosition: { not: null },
+        tenants: { some: { tenantId, active: true } },
+        queueEntry: { position: { not: null } },
         ...(excludeUserId ? { id: { not: excludeUserId } } : {})
       },
       periodStart: start,
@@ -197,9 +196,8 @@ export async function getAllUserScores(
   const performances = await prisma.userPerformance.findMany({
     where: {
       user: {
-        tenantId,
-        active: true,
-        queuePosition: { not: null }
+        tenants: { some: { tenantId, active: true } },
+        queueEntry: { position: { not: null } }
       },
       periodStart: start,
       periodType: 'MONTHLY'

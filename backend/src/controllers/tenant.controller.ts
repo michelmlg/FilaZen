@@ -2,6 +2,17 @@ import { Request, Response } from 'express'
 import { prisma } from '../utils/prisma'
 import { AppError } from '../middlewares/error.middleware'
 
+export const checkSlug = async (req: Request, res: Response) => {
+  const slug = req.params.slug as string
+
+  if (!slug || slug.length < 3) {
+    return res.json({ available: false, message: 'Slug deve ter pelo menos 3 caracteres.' })
+  }
+
+  const existing = await prisma.tenant.findUnique({ where: { slug } })
+  return res.json({ available: !existing })
+}
+
 export const getTenant = async (req: Request, res: Response) => {
   const { tenantId } = req.user!
   

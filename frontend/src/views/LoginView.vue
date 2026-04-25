@@ -13,17 +13,17 @@ const router = useRouter()
 
 const email = ref('')
 const password = ref('')
-const tenantSlug = ref('')
 
 const handleLogin = async () => {
-  const success = await auth.login({
+  const result = await auth.login({
     email: email.value,
     password: password.value,
-    tenantSlug: tenantSlug.value
   })
 
-  if (success) {
+  if (result === 'success') {
     router.push('/')
+  } else if (result === 'select-tenant') {
+    router.push('/select-tenant')
   }
 }
 </script>
@@ -43,36 +43,24 @@ const handleLogin = async () => {
       </div>
 
       <div class="space-y-2">
-        <Label for="tenantSlug">Empresa (Slug)</Label>
-        <Input 
-          id="tenantSlug" 
-          v-model="tenantSlug" 
-          type="text" 
-          placeholder="minha-empresa" 
-          required 
-          autocomplete="organization"
-        />
-      </div>
-
-      <div class="space-y-2">
         <Label for="email">Email</Label>
-        <Input 
-          id="email" 
-          v-model="email" 
-          type="email" 
-          placeholder="joao@empresa.com" 
-          required 
+        <Input
+          id="email"
+          v-model="email"
+          type="email"
+          placeholder="joao@empresa.com"
+          required
           autocomplete="email"
         />
       </div>
 
       <div class="space-y-2">
         <Label for="password">Senha</Label>
-        <Input 
-          id="password" 
-          v-model="password" 
-          type="password" 
-          required 
+        <Input
+          id="password"
+          v-model="password"
+          type="password"
+          required
           autocomplete="current-password"
         />
       </div>
