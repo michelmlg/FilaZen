@@ -22,7 +22,7 @@ const deletingUserId = ref<string | null>(null)
 
 const roleColors = {
   ADMIN: 'bg-warning/20 text-warning',
-  MANAGER: 'bg-primary/20 text-primary',
+  MANAGER: 'bg-tenant-primary/20 text-tenant-primary',
   SELLER: 'bg-muted text-muted-foreground',
 }
 
@@ -126,7 +126,7 @@ const handleRoleChange = async (user: TeamUser, newRole: 'MANAGER' | 'SELLER') =
         <h1 class="text-2xl font-bold text-foreground">Equipe</h1>
         <p class="text-muted-foreground mt-1">Gerencie os membros da sua equipe</p>
       </div>
-      <Button v-if="auth.isAdmin" @click="openCreateModal">
+      <Button v-if="auth.isAdmin" @click="openCreateModal" variant="tenant">
         <PlusIcon class="h-4 w-4 mr-2" />
         Novo Membro
       </Button>

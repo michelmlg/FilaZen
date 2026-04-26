@@ -43,7 +43,7 @@ onMounted(() => {
           @click="activeTab = 'config'"
           class="flex items-center gap-2 pb-3 px-1 border-b-2 transition-colors"
           :class="activeTab === 'config' 
-            ? 'border-primary text-foreground' 
+            ? 'border-tenant-primary text-foreground' 
             : 'border-transparent text-muted-foreground hover:text-foreground'"
         >
           <SettingsIcon class="h-4 w-4" />
@@ -53,7 +53,7 @@ onMounted(() => {
           @click="activeTab = 'snapshots'"
           class="flex items-center gap-2 pb-3 px-1 border-b-2 transition-colors"
           :class="activeTab === 'snapshots' 
-            ? 'border-primary text-foreground' 
+            ? 'border-tenant-primary text-foreground' 
             : 'border-transparent text-muted-foreground hover:text-foreground'"
         >
           <BarChart3Icon class="h-4 w-4" />

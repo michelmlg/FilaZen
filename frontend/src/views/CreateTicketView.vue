@@ -104,7 +104,7 @@ const handleSubmit = async () => {
         <Button type="button" variant="outline" @click="router.back()">
           Cancelar
         </Button>
-        <Button type="submit" :disabled="loading">
+        <Button type="submit" :disabled="loading" variant="tenant">
           <ArrowBigRightDash v-if="!loading" class="h-4 w-4 mr-2" />
           <span v-if="loading" class="animate-spin mr-2 h-4 w-4 border-2 border-t-transparent rounded-full" />
           Abrir Ticket

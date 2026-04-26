@@ -83,7 +83,7 @@ const idleUsersList = computed(() => queue.idleUsers)
         <Button 
           v-if="!queue.isUserInQueue" 
           @click="handleJoinQueue" 
-          variant="default" 
+          variant="tenant" 
           size="lg"
           :disabled="queue.isQueueLocked || queue.loading"
         >
