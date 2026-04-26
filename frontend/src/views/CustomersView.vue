@@ -93,7 +93,7 @@ const handleDelete = async (id: string) => {
         <h1 class="text-2xl font-bold text-foreground">Clientes</h1>
         <p class="text-muted-foreground mt-1">Gerencie seus leads e clientes</p>
       </div>
-      <Button @click="showCreateModal = true">
+      <Button @click="showCreateModal = true" variant="tenant">
         <PlusIcon class="h-5 w-5 mr-2" />
         Novo Cliente
       </Button>

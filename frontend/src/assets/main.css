@@ -12,6 +12,8 @@
     --popover-foreground: 222.2 84% 4.9%;
     --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
+    --tenant-primary: 221.2 83.2% 53.3%;
+    --tenant-primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
@@ -39,6 +41,8 @@
     --popover-foreground: 0 0% 98%;
     --primary: 0 0% 72%;
     --primary-foreground: 0 0% 9%;
+    --tenant-primary: 0 0% 72%;
+    --tenant-primary-foreground: 0 0% 9%;
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 15%;
@@ -72,4 +76,56 @@
 
 .dark .glass {
   @apply bg-background/80;
+}
+
+@layer utilities {
+  .bg-tenant-primary {
+    background-color: hsl(var(--tenant-primary));
+  }
+  .bg-tenant-primary\/10 {
+    background-color: hsl(var(--tenant-primary) / 0.1);
+  }
+  .bg-tenant-primary\/20 {
+    background-color: hsl(var(--tenant-primary) / 0.2);
+  }
+  .text-tenant-primary {
+    color: hsl(var(--tenant-primary));
+  }
+  .text-tenant-primary-foreground {
+    color: hsl(var(--tenant-primary-foreground));
+  }
+  .border-tenant-primary {
+    border-color: hsl(var(--tenant-primary));
+  }
+  .ring-tenant-primary {
+    --ring-color: hsl(var(--tenant-primary));
+  }
+  .hover\:bg-tenant-primary:hover {
+    background-color: hsl(var(--tenant-primary));
+  }
+  .hover\:border-tenant-primary:hover {
+    border-color: hsl(var(--tenant-primary));
+  }
+  .hover\:text-tenant-primary:hover {
+    color: hsl(var(--tenant-primary));
+  }
+  .hover\:bg-tenant-primary\/80:hover {
+    background-color: hsl(var(--tenant-primary) / 0.8);
+  }
+  .hover\:shadow-tenant-primary\/10:hover {
+    --tw-shadow-color: hsl(var(--tenant-primary) / 0.1);
+    --tw-shadow: var(--tw-shadow-colored);
+  }
+  .hover\:shadow-tenant-primary\/5:hover {
+    --tw-shadow-color: hsl(var(--tenant-primary) / 0.05);
+    --tw-shadow: var(--tw-shadow-colored);
+  }
+  .shadow-tenant-primary\/10 {
+    --tw-shadow-color: hsl(var(--tenant-primary) / 0.1);
+    --tw-shadow: var(--tw-shadow-colored);
+  }
+  .shadow-tenant-primary\/20 {
+    --tw-shadow-color: hsl(var(--tenant-primary) / 0.2);
+    --tw-shadow: var(--tw-shadow-colored);
+  }
 }

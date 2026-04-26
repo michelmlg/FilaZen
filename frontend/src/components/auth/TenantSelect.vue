@@ -49,7 +49,7 @@ const handleBack = () => {
               v-if="tenant.logoUrl"
               :src="tenant.logoUrl"
               :alt="tenant.name"
-              class="h-10 w-10 rounded-lg object-cover"
+              class="h-10 w-10 rounded-lg object-contain"
             />
             <BuildingIcon v-else class="h-6 w-6" />
           </div>

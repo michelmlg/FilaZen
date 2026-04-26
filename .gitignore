@@ -23,9 +23,6 @@ Thumbs.db
 .vscode/settings.json
 .idea/
 
-# Prisma
-backend/prisma/migrations/**/migration.sql
-
 # Docker
 .docker/
 

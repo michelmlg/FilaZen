@@ -15,7 +15,7 @@ const colorMap = {
   success: 'bg-success/10 border-success/30 text-success dark:bg-success/20 dark:border-success/50 dark:text-success',
   error: 'bg-destructive/10 border-destructive/30 text-destructive dark:bg-destructive/20 dark:border-destructive/50 dark:text-destructive',
   warning: 'bg-warning/10 border-warning/30 text-warning dark:bg-warning/20 dark:border-warning/50 dark:text-warning',
-  info: 'bg-primary/10 border-primary/30 text-primary dark:bg-primary/20 dark:border-primary/50 dark:text-primary',
+  info: 'bg-tenant-primary/10 border-tenant-primary/30 text-tenant-primary dark:bg-tenant-primary/20 dark:border-tenant-primary/50 dark:text-tenant-primary',
 }
 </script>
 

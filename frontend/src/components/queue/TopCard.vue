@@ -48,7 +48,7 @@ const handleOpenTicket = () => {
         <div 
           class="absolute -top-2 -right-2 rounded-full p-2 shadow-lg z-10 ring-2 ring-background"
           :class="usePrimaryCrown 
-            ? 'bg-primary text-primary-foreground' 
+            ? 'bg-tenant-primary text-tenant-primary-foreground' 
             : 'bg-yellow-400 text-yellow-900'"
         >
           <CrownIcon class="h-5 w-5" />
@@ -76,6 +76,7 @@ const handleOpenTicket = () => {
       <Button 
         v-if="isCurrentUser && user.queuePosition === 1"
         size="lg" 
+        variant="tenant"
         class="w-full gap-2 text-base font-medium"
         @click="handleOpenTicket"
       >

@@ -23,7 +23,7 @@ const getActionConfig = (actionType: QueueAction['actionType']) => {
     case 'SKIP':
       return { icon: ForwardIcon, label: 'foi pulado', bgClass: 'bg-warning/10', textClass: 'text-warning' }
     case 'OPEN_TICKET':
-      return { icon: TicketIcon, label: 'abriu ticket', bgClass: 'bg-primary/10', textClass: 'text-primary' }
+      return { icon: TicketIcon, label: 'abriu ticket', bgClass: 'bg-tenant-primary/10', textClass: 'text-tenant-primary' }
     case 'COMPLETE_TICKET':
       return { icon: CheckCircleIcon, label: 'completou ticket', bgClass: 'bg-success/10', textClass: 'text-success' }
     case 'LOCK':

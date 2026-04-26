@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useApi } from '@/composables/useApi'
 import { useWebSocket } from '@/composables/useWebSocket'
+import { useTenantStore } from '@/stores/tenant.store'
 
 export interface User {
   id: string
@@ -137,6 +138,8 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const logout = () => {
+    const tenant = useTenantStore()
+    tenant.resetThemeColors()
     user.value = null
     clearPending()
     setToken(null)

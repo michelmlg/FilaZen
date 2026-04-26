@@ -92,7 +92,7 @@ const handleCloseTicket = async (id: string) => {
         <h1 class="text-2xl font-bold text-foreground">Oportunidades</h1>
         <p class="text-muted-foreground mt-1">Gerencie tickets e oportunidades de venda</p>
       </div>
-      <Button @click="showCreateModal = true">
+      <Button @click="showCreateModal = true" variant="tenant">
         <PlusIcon class="h-5 w-5 mr-2" />
         Nova Oportunidade
       </Button>

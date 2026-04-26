@@ -40,13 +40,13 @@ const formatStrategy = (strategy: string) => {
 
 <template>
   <div 
-    class="bg-card rounded-lg border p-4 hover:border-primary/50 cursor-pointer transition-all hover:shadow-md"
+    class="bg-card rounded-lg border p-4 hover:border-tenant-primary/50 cursor-pointer transition-all hover:shadow-md"
     @click="emit('click')"
   >
     <div class="flex items-start justify-between">
       <div class="flex items-start gap-3">
-        <div class="bg-primary/10 p-2 rounded-lg">
-          <CalendarIcon class="h-5 w-5 text-primary" />
+        <div class="bg-tenant-primary/10 p-2 rounded-lg">
+          <CalendarIcon class="h-5 w-5 text-tenant-primary" />
         </div>
         <div>
           <h3 class="font-semibold capitalize">
@@ -87,7 +87,7 @@ const formatStrategy = (strategy: string) => {
           :key="user.userId"
           class="flex items-center gap-2 text-sm"
         >
-          <span class="font-bold" :class="{ 'text-primary': index === 0 }">
+          <span class="font-bold" :class="{ 'text-tenant-primary': index === 0 }">
             #{{ user.position }}
           </span>
           <span>{{ user.name }}</span>
