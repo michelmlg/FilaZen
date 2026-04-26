@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import { useTenantStore } from '@/stores/tenant.store'
+import { useAuthStore } from '@/stores/auth.store'
 import ToastContainer from '@/components/ToastContainer.vue'
 
 const tenant = useTenantStore()
+const auth = useAuthStore()
 
 onMounted(() => {
   const isDark = localStorage.getItem('theme') === 'dark' || 
@@ -13,6 +15,12 @@ onMounted(() => {
   
   if (localStorage.getItem('token')) {
     tenant.fetchConfig()
+  }
+})
+
+watch(() => auth.user?.tenantId, async (newTenantId) => {
+  if (newTenantId) {
+    await tenant.fetchConfig()
   }
 })
 </script>
