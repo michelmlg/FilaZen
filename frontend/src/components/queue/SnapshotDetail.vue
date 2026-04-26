@@ -78,7 +78,7 @@ const formatStrategy = (strategy: string) => {
 
       <div class="flex-1 overflow-y-auto p-6">
         <div v-if="queue.loadingSnapshots" class="flex items-center justify-center py-12">
-          <div class="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+          <div class="animate-spin h-8 w-8 border-4 border-tenant-primary border-t-transparent rounded-full"></div>
         </div>
 
         <template v-else-if="queue.currentSnapshotDetail">
@@ -90,7 +90,7 @@ const formatStrategy = (strategy: string) => {
               </h3>
               <div class="grid grid-cols-3 gap-4">
                 <div class="text-center">
-                  <div class="text-2xl font-bold text-primary">
+                  <div class="text-2xl font-bold text-tenant-primary">
                     {{ queue.currentSnapshotDetail.snapshot.metadata.totalInQueue }}
                   </div>
                   <div class="text-xs text-muted-foreground">Na fila</div>
@@ -124,7 +124,7 @@ const formatStrategy = (strategy: string) => {
                 >
                   <span 
                     class="font-bold text-lg w-8"
-                    :class="user.position === 1 ? 'text-primary' : 'text-muted-foreground'"
+                    :class="user.position === 1 ? 'text-tenant-primary' : 'text-muted-foreground'"
                   >
                     #{{ user.position }}
                   </span>

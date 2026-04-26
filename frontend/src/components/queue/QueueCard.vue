@@ -44,9 +44,9 @@ const statusColor = computed(() => {
     <div 
       v-if="showCrown" 
       class="absolute -top-2 left-4 rounded-full p-1 shadow-sm z-10 ring-2 ring-background"
-      :class="usePrimaryCrown 
-        ? 'bg-primary text-primary-foreground' 
-        : 'bg-yellow-400 text-yellow-900'"
+:class="usePrimaryCrown 
+          ? 'bg-tenant-primary text-tenant-primary-foreground' 
+          : 'bg-yellow-400 text-yellow-900'"
     >
       <CrownIcon class="h-4 w-4" />
     </div>
@@ -63,7 +63,7 @@ const statusColor = computed(() => {
         :src="user.avatarUrl" 
         :fallback="user.name" 
         class="flex-shrink-0"
-        :class="{ 'ring-2 ring-muted-foreground/40': showCrown && usePrimaryCrown }"
+        :class="{ 'ring-2 ring-tenant-primary/40': showCrown && usePrimaryCrown }"
       />
     </div>
 
