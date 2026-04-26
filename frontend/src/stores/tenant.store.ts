@@ -56,11 +56,16 @@ export const useTenantStore = defineStore('tenant', () => {
     }
   }
 
+  const resetThemeColors = () => {
+    document.documentElement.style.removeProperty('--tenant-primary')
+    document.documentElement.style.removeProperty('--tenant-primary-foreground')
+  }
+
   const applyThemeColors = (primaryColor?: string) => {
     const color = primaryColor || config.value?.primaryColor
     if (color) {
       const hsl = hexToHsl(color)
-      document.documentElement.style.setProperty('--primary', hsl)
+      document.documentElement.style.setProperty('--tenant-primary', hsl)
 
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color)
       if (result) {
@@ -69,7 +74,7 @@ export const useTenantStore = defineStore('tenant', () => {
         const b = parseInt(result[3]!, 16)
         const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
         const foreground = luminance > 0.5 ? '222.2 47.4% 11.2%' : '210 40% 98%'
-        document.documentElement.style.setProperty('--primary-foreground', foreground)
+        document.documentElement.style.setProperty('--tenant-primary-foreground', foreground)
       }
     }
   }
@@ -92,6 +97,7 @@ export const useTenantStore = defineStore('tenant', () => {
     config,
     loading,
     fetchConfig,
+    resetThemeColors,
     applyThemeColors,
     saveSettings,
   }
